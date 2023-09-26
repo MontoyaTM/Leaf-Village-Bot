@@ -1,0 +1,6 @@
+﻿{
+  "host": "token",
+  "username": "username",
+  "password": "password",
+  "database": "database"
+}
