@@ -21,6 +21,8 @@ namespace Leaf_Village_Bot.Commands.LMPF
         [ModalCommand("LMPFReportModal")]
         public async Task SubmitLMPFReport(ModalContext ctx)
         {
+            await ctx.Interaction.DeferAsync();
+
             var modalValues = ctx.Values;
             var DBUtil_TicketSystem = new DBUtil_ReportTicket();
 
@@ -42,9 +44,6 @@ namespace Leaf_Village_Bot.Commands.LMPF
             {
                 var createDiscussionChannel = await ctx.Interaction.Guild.CreateChannelAsync($"Report Discussion: {ticketInfo.UserName}", ChannelType.Text, ctx.Interaction.Channel.Parent);
 
-                await ctx.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder()
-                                                                                            .WithContent($"Succesfully created ticket for {ctx.Interaction.User.Username}"));
-
                 var embedTicket = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithColor(DiscordColor.SpringGreen)
@@ -61,11 +60,12 @@ namespace Leaf_Village_Bot.Commands.LMPF
                         );
 
                 await createDiscussionChannel.SendMessageAsync(embedTicket);
+
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Succesfully created ticket for {ctx.Interaction.User.Username}"));
             }
             else
             {
-                await ctx.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder()
-                                                                           .WithContent($"Failed to created ticket for {ctx.Interaction.User.Username}"));
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to created ticket for {ctx.Interaction.User.Username}"));
             }
         }
     }

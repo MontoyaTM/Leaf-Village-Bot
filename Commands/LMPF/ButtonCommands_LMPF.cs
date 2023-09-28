@@ -34,20 +34,14 @@ namespace Leaf_Village_Bot.Commands.LMPF
         {
             await ctx.Interaction.DeferAsync();
 
-            var user = (DiscordMember)ctx.Interaction.User;
-            var userRoles = user.Roles.ToArray();
+            var hasLMPFRole = ctx.Member.Roles.Any(x => x.Name == "LMPF");
 
-            foreach (var role in userRoles)
+            if (hasLMPFRole)
             {
-                if (role.Name == "LMPF")
-                {
-                    await ctx.Channel.DeleteAsync();
-                }
-                else
-                {
-                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to close ticket for {ctx.Interaction.User.Username}, please check required roles."));
-                    break;
-                }
+                await ctx.Channel.DeleteAsync();
+            } else
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to close ticket for {ctx.Interaction.User.Username}, please check required roles."));
             }
         }
 
@@ -57,49 +51,59 @@ namespace Leaf_Village_Bot.Commands.LMPF
             await ctx.Interaction.DeferAsync(true);
 
             var DBUtil_ReportTicket = new DBUtil_ReportTicket();
-            var user = (DiscordMember)ctx.Interaction.User;
-            var userRoles = user.Roles.ToArray();
 
-            foreach(var role in userRoles)
+            var isEmpty = await DBUtil_ReportTicket.isEmptyAsync();
+
+            if (isEmpty)
             {
-                if(role.Name == "LMPF")
+                var embedFailed = new DiscordEmbedBuilder()
                 {
-                    var isEmpty = await DBUtil_ReportTicket.isEmptyAsync();
+                    Color = DiscordColor.Red,
+                    Title = "There are no tickets to be viewed!"
+                };
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
+                return;
+            }
 
-                    if(isEmpty)
+            var hasLMPFRole = ctx.Member.Roles.Any(x => x.Name == "LMPF");
+
+            if (hasLMPFRole)
+            {
+                var retrieveTickets = await DBUtil_ReportTicket.GetAllReportTicketsAsync();
+
+                if (retrieveTickets.Item1 == false)
+                {
+                    var embedFailed = new DiscordEmbedBuilder()
                     {
-                        var embedFailed = new DiscordEmbedBuilder()
-                        {
-                            Color = DiscordColor.Red,
-                            Title = "There are no tickets to be viewed!"
-                        };
-                        await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
-                        return;
-                    }
-
-                    var tickets = await DBUtil_ReportTicket.GetAllReportTicketsAsync();
-                    var ticketsArray = tickets.Item2.ToArray();
-
-                    string[] outputArray = new string[ticketsArray.Length];
-                    int i = 0;
-                    foreach(var item in ticketsArray)
-                    {
-                        outputArray[i] = $"TicketNo: **{item.TicketNo}**, Plantiff: **{item.Plantiff}**, Defendant: **{item.Defendant}**";
-                        i++;
-                    }
-
-                    var embedTickets = new DiscordEmbedBuilder()
-                    {
-                        Color = DiscordColor.SpringGreen,
-                        Title = "Leaf Miltary Police Force Active Reports",
-                        Description = string.Join("\n", outputArray)
+                        Color = DiscordColor.Red,
+                        Title = "Database retrieval of all tickets has returned false!"
                     };
-                    
-                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedTickets));
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
                     return;
                 }
+
+                var ticketsArray = retrieveTickets.Item2.ToArray();
+
+                string[] outputArray = new string[ticketsArray.Length];
+                int i = 0;
+                foreach (var item in ticketsArray)
+                {
+                    outputArray[i] = $"TicketNo: **{item.TicketNo}**, Plantiff: **{item.Plantiff}**, Defendant: **{item.Defendant}**";
+                    i++;
+                }
+               
+                var embedTickets = new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.SpringGreen,
+                    Title = "Leaf Miltary Police Force Active Reports",
+                    Description = string.Join("\n", outputArray)
+                };
+
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedTickets));
+            } else
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to view ticket for {ctx.Interaction.User.Username}, please check required roles."));
             }
-            await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to view ticket for {ctx.Interaction.User.Username}, please check required roles."));
         }
 
         [ButtonCommand("btnLMPFGetTicket")]
@@ -108,106 +112,124 @@ namespace Leaf_Village_Bot.Commands.LMPF
             await ctx.Interaction.DeferAsync(true);
 
             var DBUtil_ReportTicket = new DBUtil_ReportTicket();
-            var user = (DiscordMember)ctx.Interaction.User;
-            var userRole = user.Roles.ToArray();
 
-            foreach(var role in userRole)
+            var isEmpty = await DBUtil_ReportTicket.isEmptyAsync();
+
+            if (isEmpty)
             {
-                if(role.Name == "LMPF")
+                var embedFailed = new DiscordEmbedBuilder()
                 {
-                    var dropdownOptions = new List<DiscordSelectComponentOption>();
-                    var getTickets = await DBUtil_ReportTicket.GetAllReportTicketsAsync();
-                    var tickets = getTickets.Item2.ToArray();
+                    Color = DiscordColor.Red,
+                    Title = "There are no tickets to be retrieved!"
+                };
 
-                    var isEmpty = await DBUtil_ReportTicket.isEmptyAsync();
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
+                return;
+            }
 
-                    if (isEmpty)
+            var hasLMPFRole = ctx.Member.Roles.Any(x => x.Name == "LMPF");
+
+            if (hasLMPFRole)
+            {
+                var retrieveOptions = await GetSelectComponentOptions();
+
+                if (retrieveOptions.Item1 == false)
+                {
+                    var embedFailed = new DiscordEmbedBuilder()
                     {
-                        var embedFailed = new DiscordEmbedBuilder()
-                        {
-                            Color = DiscordColor.Red,
-                            Title = "There are no tickets to be retrieved!"
-                        };
-
-                        await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
-                        return;
-                    }
-
-                    foreach(var ticket in tickets)
-                    {
-                        var selectOptions = new DiscordSelectComponentOption(
-                            $"TicketNo: {ticket.TicketNo}", $"{ticket.TicketNo}", $"Plantiff: {ticket.Plantiff} v. Defendant: {ticket.Defendant}"
-                            );
-                        dropdownOptions.Add(selectOptions);
-                    }
-
-                    var createDropDown = new DiscordSelectComponent("dpdwnLMPFGetTicket", null, dropdownOptions, false, 0, dropdownOptions.Count());
-
-                    var dropdownTicketEmbed = new DiscordMessageBuilder()
-                        .AddEmbed(new DiscordEmbedBuilder()
-                            .WithTitle("Select the ID of the ticket you want to retrieve.")
-                            .WithColor(DiscordColor.SpringGreen))
-                        .AddComponents(createDropDown);
-
-                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder(dropdownTicketEmbed));
+                        Color = DiscordColor.Red,
+                        Title = "Database retrieval of all tickets has returned false!"
+                    };
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
                     return;
                 }
+
+                var createDropDown = new DiscordSelectComponent("dpdwnLMPFGetTicket", null, retrieveOptions.Item2, false, 0, retrieveOptions.Item2.Count);
+
+                var dropdownTicketEmbed = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle("Select the ID of the ticket you want to retrieve.")
+                        .WithColor(DiscordColor.SpringGreen))
+                    .AddComponents(createDropDown);
+
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder(dropdownTicketEmbed));
+            } else
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to retrieve  ticket for {ctx.Interaction.User.Username}, please check required roles."));
             }
-            await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to retrieve  ticket for {ctx.Interaction.User.Username}, please check required roles."));
         }
 
         [ButtonCommand("btnLMPFDeleteTicket")]
         public async Task DeleteReportTicket(ButtonContext ctx)
         {
             await ctx.Interaction.DeferAsync(true);
-
             var DBUtil_ReportTicket = new DBUtil_ReportTicket();
-            var user = (DiscordMember)ctx.Interaction.User;
-            var userRoles = user.Roles.ToArray();
+            
+            var isEmpty = await DBUtil_ReportTicket.isEmptyAsync();
 
-            foreach(var role in userRoles)
+            if (isEmpty)
             {
-                if(role.Name == "LMPF")
+                var embedFailed = new DiscordEmbedBuilder()
                 {
-                    var dropdownOptions = new List<DiscordSelectComponentOption>();
-                    var getTickets = await DBUtil_ReportTicket.GetAllReportTicketsAsync();
-                    var tickets = getTickets.Item2.ToArray();
+                    Color = DiscordColor.Red,
+                    Title = "There are no tickets to be deleted!"
+                };
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
+                return;
+            }
 
-                    var isEmpty = await DBUtil_ReportTicket.isEmptyAsync();
+            var hasLMPFRole = ctx.Member.Roles.Any(x => x.Name == "LMPF");
 
-                    if(isEmpty)
+            if(hasLMPFRole)
+            {
+                var retrieveOptions = await GetSelectComponentOptions();
+
+                if(retrieveOptions.Item1 == false)
+                {
+                    var embedFailed = new DiscordEmbedBuilder()
                     {
-                        var embedFailed = new DiscordEmbedBuilder()
-                        {
-                            Color = DiscordColor.Red,
-                            Title = "There are no tickets to be deleted!"
-                        };
-                        await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
-                        return;
-                    }
+                        Color = DiscordColor.Red,
+                        Title = "Database retrieval of all tickets has returned false!"
+                    };
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
+                    return;
+                }
 
-                    foreach(var ticket in tickets)
-                    {
-                        var selectOptions = new DiscordSelectComponentOption(
-                            $"TicketNo: {ticket.TicketNo}", $"{ticket.TicketNo}", $"Plantiff: {ticket.Plantiff} v. Defendant: {ticket.Defendant}"
-                            );
-                        dropdownOptions.Add(selectOptions);
-                    }
+                var createDropDown = new DiscordSelectComponent("dpdwnLMPFDeleteTicket", null, retrieveOptions.Item2, false, 0, retrieveOptions.Item2.Count);
 
-                    var createDropDown = new DiscordSelectComponent("dpdwnLMPFDeleteTicket", null, dropdownOptions, false, 0, dropdownOptions.Count());
-
-                    var dropdownTicketEmbed = new DiscordMessageBuilder()
+                var dropdownTicketEmbed = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder()
                             .WithTitle("Select the ID of the ticket you want to delete.")
                             .WithColor(DiscordColor.SpringGreen))
                         .AddComponents(createDropDown);
 
-                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder(dropdownTicketEmbed));
-                    return;
-                }
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder(dropdownTicketEmbed));
+            } else
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to delete ticket for {ctx.Interaction.User.Username}, please check required roles."));
+            }
+        }
+
+        public async Task<(bool, List<DiscordSelectComponentOption>)> GetSelectComponentOptions()
+        {
+            var dropdownOptions = new List<DiscordSelectComponentOption>();
+            var DBUtil_ReportTicket = new DBUtil_ReportTicket();
+            var retrieveTickets = await DBUtil_ReportTicket.GetAllReportTicketsAsync();
+
+            if (retrieveTickets.Item1 == false)
+            {
+                return (false, null);
             }
 
-            await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to delete ticket for {ctx.Interaction.User.Username}, please check required roles."));
+            foreach (var ticket in retrieveTickets.Item2)
+            {
+                var selectOptions = new DiscordSelectComponentOption(
+                    $"TicketNo: {ticket.TicketNo}", $"{ticket.TicketNo}", $"Plantiff: {ticket.Plantiff} v. Defendant: {ticket.Defendant}"
+                    );
+                dropdownOptions.Add(selectOptions);
+            }
+
+            return (true, dropdownOptions);
         }
 
 

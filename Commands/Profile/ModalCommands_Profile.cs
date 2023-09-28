@@ -21,10 +21,22 @@ namespace Leaf_Village_Bot.Commands.Profile
         [ModalCommand("ProfileVillagerApplication")]
         public async Task SubmitVillagerApplication(ModalContext ctx)
         {
+            await ctx.Interaction.DeferAsync();
             var modalValues = ctx.Values;
             var DBUtil_Profile = new DBUtil_Profile();
 
             ButtonCommandsExtension buttonCommand = ctx.Client.GetButtonCommands();
+
+            try
+            {
+                var level = int.Parse(modalValues.ElementAt(1));
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Level field must be a number!"));
+                return;
+
+            }
 
             var userInfo = new DBProfile
             {
@@ -43,8 +55,8 @@ namespace Leaf_Village_Bot.Commands.Profile
                 var guildChannels = await ctx.Interaction.Guild.GetChannelsAsync();
                 var villagerApplicationsChannel = guildChannels.FirstOrDefault(x => x.Name == "villager-applications");
 
-                await ctx.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder()
-                                                                                        .WithContent($"Succesfully created ticket for {ctx.Interaction.User.Username}"));
+
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Succesfully created ticket for {ctx.Interaction.User.Username}"));
 
                 var embedApplication = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
@@ -54,7 +66,7 @@ namespace Leaf_Village_Bot.Commands.Profile
                         .WithThumbnail(LeafSymbolURL)
                         .AddField("IGN:", userInfo.InGameName, true)
                         .AddField("Level:", userInfo.Level.ToString(), true)
-                        .AddField("Masteries:", userInfo.Masteries)
+                        .AddField("Masteries:", userInfo.Masteries, true)
                         .AddField("Clan:", userInfo.Clan)
                         .AddField("Alt(s):", userInfo.Alts))
                     .AddComponents(
@@ -65,8 +77,7 @@ namespace Leaf_Village_Bot.Commands.Profile
                 await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(villagerApplicationsChannel.Id), embedApplication);
             } else
             {
-                await ctx.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder()
-                                                                           .WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Please be aware of one application per user!"));
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Please be aware of one application per user!"));
             }
         }
     }

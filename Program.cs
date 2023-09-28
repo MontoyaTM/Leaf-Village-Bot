@@ -178,12 +178,7 @@ namespace Leaf_Village_Bot
                         await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(success));
                         break;
                 }
-
-
-
-
             }
-                
         }
 
         private static Task OnClientReady(DiscordClient sender, DSharpPlus.EventArgs.ReadyEventArgs e)

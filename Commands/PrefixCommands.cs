@@ -3,13 +3,6 @@ using DSharpPlus.ButtonCommands.Extensions;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.ModalCommands;
-using DSharpPlus.ModalCommands.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Leaf_Village_Bot.Commands
 {
@@ -17,7 +10,8 @@ namespace Leaf_Village_Bot.Commands
     {
         private string LeafSymbolURL = "https://i.imgur.com/spjhOGb.png";
         private string LMPFSymbolURL = "https://i.imgur.com/QbBzNiR.png";
-        private string NPCURL = "https://i.imgur.com/LZPDi1r.png";
+        private string VillagerNPCURL = "https://i.imgur.com/LZPDi1r.png";
+        private string LMPFNPCURL = "https://i.imgur.com/CDsvN88.png";
 
         [Command("lmpf_ticketreport")]
         [RequireRoles(RoleCheckMode.Any, "Administrator")]
@@ -25,13 +19,13 @@ namespace Leaf_Village_Bot.Commands
         public async Task LMPFReportForm(CommandContext ctx)
         {
             ButtonCommandsExtension buttonCommand = ctx.Client.GetButtonCommands();
-            
+
             var embedSupportForm = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithColor(DiscordColor.SpringGreen)
                     .WithTitle("Leaf Military Police Force Ticket Report")
                     .WithDescription(" ")
-                    .WithImageUrl(LMPFSymbolURL)
+                    .WithImageUrl(LMPFNPCURL)
                     .WithThumbnail(LeafSymbolURL)
                     .AddField("Plantiff:", "The person who issued the report.")
                     .AddField("Defendant:", "The person(s) who are being accused.")
@@ -62,7 +56,7 @@ namespace Leaf_Village_Bot.Commands
                     .WithColor(DiscordColor.SpringGreen)
                     .WithTitle("Leaf Military Police Report Dashboard")
                     .WithThumbnail(LeafSymbolURL)
-                    .WithImageUrl(LMPFSymbolURL)
+                    .WithImageUrl(LMPFNPCURL)
                     .AddField("View Tickets:", "Displays a list of active tickets that needs to be investigated by LMPF.")
                     .AddField("Get Ticket:", "Displays a dropdown menu of active tickets and returns the selected ticket to be displayed")
                     .AddField("Delete Ticket:", "Displays a dropdown menu of active tickets and deletes the selected ticket from active reports.")
@@ -91,15 +85,17 @@ namespace Leaf_Village_Bot.Commands
                     .WithColor(DiscordColor.SpringGreen)
                     .WithTitle("Leaf Village — Villager Application")
                     .WithDescription(" ")
-                    .WithImageUrl(NPCURL)
+                    .WithImageUrl(VillagerNPCURL)
                     .WithThumbnail(LeafSymbolURL)
-                    .AddField("IGN:", "The name of your character you are currently maining.")
-                    .AddField("Level:", "The level of your character.")
-                    .AddField("Masteries:", "The masteries for your character. Make sure to separate your masteries with a comma!" +
+                    .AddField("IGN:", "The in game name of the character you are currently maining.")
+                    .AddField("Level (1-60):", "The level of your character.")
+                    .AddField("Masteries:", "The masteries of your character. Make sure to separate your masteries with a comma!" +
                                             "\n\n Ex: Fire, Earth \n")
-                    .AddField("Clan:", "The clan your character has chosen.")
-                    .AddField("Alt(s):", "An entire list of characters that you play on or have access to. If you are caught lying, an immediate punishment will follow which may include exile. Make sure to separate your alt(s) with a comma!" +
-                                         "\n\n Ex: Character1, Character2, ...")
+                    .AddField("Clan:", "The clan your character has chosen. If you did not choose a clan, type \"Clanless\".")
+                    .AddField("Alt(s):", "An entire list of characters that you play on or have access to. Please include the IGN of the character for this application. " +
+                                         "\n\nIf you are caught lying, an immediate punishment will follow which may include exile. Make sure to separate your alt(s) with a comma!" +
+                                         "\n\n Ex: IGN, Alt1, Alt2, ...")
+                    .WithFooter("Please be aware of one application per user, you will not be able to edit your application once submitted!")
 
                 ).AddComponents(new DiscordComponent[]
                 {

@@ -143,6 +143,32 @@ namespace Leaf_Village_Bot.DBUtil.Profile
             }
         }
 
+        public async Task<bool> DeleteVillagerApplication(string username)
+        {
+            try
+            {
+                var connectionString = await ConnectionString();
+
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+
+                    string query = "DELETE FROM data.userinfo " +
+                                 $"WHERE username = '{username}';";
+
+                    using (var cmd = new NpgsqlCommand(query, conn))
+                    {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+                return true;
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
         public async Task<(bool, DBProfile)> GetApplicationFromIngameNameAsync(string ingameName)
         {
             DBProfile profile = null;
