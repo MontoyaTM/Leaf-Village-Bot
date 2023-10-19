@@ -8,12 +8,13 @@ namespace Leaf_Village_Bot.DBUtil.ReportTicket
 {
     public class DBReportTicket
     {
-        public int TicketNo { get; set; }
+        public ulong TicketID { get; set; }
         public string UserName { get; set; }
+        public ulong MemberID { get; set; }
+        public ulong ServerID { get; set; }
         public string Plantiff { get; set; }
         public string Defendant { get; set; }
         public string Date { get; set; }
         public string Details { get; set; }
-        public string Screenshots { get; set; }
     }
 }

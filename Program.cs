@@ -14,6 +14,9 @@ using Leaf_Village_Bot.Commands.Profile;
 using Microsoft.Extensions.Logging;
 using Leaf_Village_Bot.DBUtil.ReportTicket;
 using DSharpPlus.Entities;
+using Leaf_Village_Bot.Commands.Ranked;
+using Leaf_Village_Bot.DBUtil.RPRequest;
+using Leaf_Village_Bot.Commands.Hokage;
 
 namespace Leaf_Village_Bot
 {
@@ -46,7 +49,7 @@ namespace Leaf_Village_Bot
             // 4. Setting default timeout for Commands that use Interactivity
             Client.UseInteractivity(new InteractivityConfiguration()
             {
-                Timeout = TimeSpan.FromMinutes(2)
+                Timeout = TimeSpan.FromMinutes(5)
             });
 
             // 5. Creating Task Handler
@@ -82,10 +85,24 @@ namespace Leaf_Village_Bot
 
             // 7. Register Commands
             Commands.RegisterCommands<PrefixCommands>();
+            Commands.RegisterCommands<PrefixCommands_Hokage>();
+            Commands.RegisterCommands<PrefixCommands_LMPF>();
+            Commands.RegisterCommands<PrefixCommands_Profile>();
+            Commands.RegisterCommands<PrefixCommands_Ranked>();
+
+
+            slashCommands.RegisterCommands<SlashCommands_Profile>();
+
             ButtonCommands.RegisterButtons<ButtonCommands_Profile>();
             ButtonCommands.RegisterButtons<ButtonCommands_LMPF>();
+            ButtonCommands.RegisterButtons<ButtonCommands_Ranked>();
+            ButtonCommands.RegisterButtons<ButtonCommands_Hokage>();
+
             ModalCommands.RegisterModals<ModalCommands_Profile>();
+            ModalCommands.RegisterModals<ModalCommands_Ranked>();
             ModalCommands.RegisterModals<ModalCommands_LMPF>();
+
+            Commands.CommandErrored += OnCommandErrored;
 
             // 8. Button Commands Event Handler
             ButtonCommands.ButtonCommandExecuted += ButtonCommands_ButtonCommandExecuted;
@@ -100,10 +117,17 @@ namespace Leaf_Village_Bot
             await Task.Delay(-1);
         }
 
+        private static Task OnCommandErrored(CommandsNextExtension sender, CommandErrorEventArgs args)
+        {
+            args.Context.Client.Logger.LogError(args.Exception,
+                    $"{args.Context.Member} has used button command {args.Command} ({args.Command.Name}) which threw an exception: {args.Exception.Message}");
+            return Task.CompletedTask;
+        }
+
         private static Task ModalCommands_ModalCommandErrored(ModalCommandsExtension sender, DSharpPlus.ModalCommands.EventArgs.ModalCommandErrorEventArgs args)
         {
             args.Context.Client.Logger.LogError(args.Exception,
-                    $"{args.Context.Member} has used button command {args.CommandName} ({args.ModalId}) which threw an exception");
+                    $"{args.Context.Member} has used button command {args.CommandName} ({args.ModalId}) which threw an exception: {args.Exception.Message}");
             return Task.CompletedTask;
         }
 
@@ -117,7 +141,7 @@ namespace Leaf_Village_Bot
         private static Task ButtonCommands_ButtonCommandErrored(ButtonCommandsExtension sender, DSharpPlus.ButtonCommands.EventArgs.ButtonCommandErrorEventArgs args)
         {
             args.Context.Client.Logger.LogError(args.Exception,
-                    $"{args.Context.Member} has used button command {args.CommandName} ({args.ButtonId}) which threw an exception");
+                    $"{args.Context.Member} has used button command {args.CommandName} ({args.ButtonId}) which threw an exception: {args.Exception.Message}");
             return Task.CompletedTask;
         }
 
@@ -136,46 +160,125 @@ namespace Leaf_Village_Bot
         private static async Task OnClientComponentInteractionCreated(DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
         {
             var DBUtil_ReportTicket = new DBUtil_ReportTicket();
+            var DBUtil_RPRequest = new DBUtil_RPRequest();
 
             if (e.Interaction.Data.ComponentType == ComponentType.StringSelect)
             {
                 switch (e.Interaction.Data.CustomId)
                 {
-                    case "dpdwnLMPFGetTicket":
-                        string selectedOption = e.Interaction.Data.Values[0];
-                        var ticketNoSelected = int.Parse(selectedOption);
+                    case "dpdwn_GetTicket":
+                        string ticketSelected = e.Interaction.Data.Values[0];
+                        var ticketID_Selected = ulong.Parse(ticketSelected);
+                        var serverid_ticket = e.Interaction.Guild.Id;
 
-                        var result = await DBUtil_ReportTicket.GetReportTicketAsync(ticketNoSelected);
-                        var ticket = result.Item2;
+                        var ticketResult = await DBUtil_ReportTicket.GetReportTicketAsync(ticketID_Selected, serverid_ticket);
+
+                        if(ticketResult.Item1 == false)
+                        {
+                            var failed = new DiscordEmbedBuilder()
+                            {
+                                Color = DiscordColor.Red,
+                                Title = "Failed to retreive the ticket!"
+                            };
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(failed));
+                            break;
+                        }
+
+                        var ticket = ticketResult.Item2;
+                        DiscordMember ticketMember = await e.Guild.GetMemberAsync(ticket.MemberID);
 
                         var displayTicket = new DiscordMessageBuilder()
                             .AddEmbed(new DiscordEmbedBuilder()
                                 .WithColor(DiscordColor.SpringGreen)
                                 .WithTitle("Leaf Military Police Report System")
-                                .WithImageUrl("https://static.wikia.nocookie.net/naruto/images/f/f2/Military_Police_Symbol.svg/revision/latest/scale-to-width-down/150?cb=20160212025523")
-                                .WithThumbnail("https://www.ninonline.com/forum/uploads/monthly_2018_07/LeafSymbolX.png.8c5645dae2146b2745cde4c4a48f7583.png")
-                                .AddField("Reporter:", ticket.Plantiff)
-                                .AddField("Accused:", ticket.Defendant)
+                                .WithImageUrl(ticketMember.AvatarUrl)
+                                .WithThumbnail(Global.LeafSymbol_URL)
+                                .AddField("Plantiff:", ticket.Plantiff)
+                                .AddField("Defendant:", ticket.Defendant)
                                 .AddField("Date:", ticket.Date)
                                 .AddField("Details:", ticket.Details)
-                                .AddField("Screenshot URL:", ticket.Screenshots)
                                 );
                         await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder(displayTicket));
                         break;
 
-                    case "dpdwnLMPFDeleteTicket":
-                        string deletedOption = e.Interaction.Data.Values[0];
-                        var ticketNoDeleted = int.Parse(deletedOption);
+                    case "dpdwn_DeleteTicket":
+                        string ticketDeleted = e.Interaction.Data.Values[0];
+                        var ticketID_Deleted = ulong.Parse(ticketDeleted);
 
-                        await DBUtil_ReportTicket.DeleteReportTicketAsync(ticketNoDeleted);
+                        var isTicketDeleted = await DBUtil_ReportTicket.DeleteReportTicketAsync(ticketID_Deleted);
 
-                        var success = new DiscordEmbedBuilder()
+                        if(isTicketDeleted)
                         {
-                            Color = DiscordColor.SpringGreen,
-                            Title = "Successfully deleted the ticket!"
-                        };
+                            var success = new DiscordEmbedBuilder()
+                            {
+                                Color = DiscordColor.SpringGreen,
+                                Title = "Successfully delete the ticket!"
+                            };
 
-                        await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(success));
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(success));
+                        } else
+                        {
+                            var failed = new DiscordEmbedBuilder()
+                            {
+                                Color = DiscordColor.Red,
+                                Title = "Failed to delete the ticket!"
+                            };
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(failed));
+                        }
+                        break;
+
+                    case "dpdwnGetRequest":
+                        string requestSelected = e.Interaction.Data.Values[0];
+                        var requestID = ulong.Parse(requestSelected);
+                        var serverid_request = e.Interaction.Guild.Id;
+
+                        var requestResult = await DBUtil_RPRequest.GetRequestAsync(requestID, serverid_request);
+                        var request = requestResult.Item2;
+
+                        DiscordMember requestMember = await e.Guild.GetMemberAsync(request.MemberID);
+
+                        var displayRequest = new DiscordMessageBuilder()
+                        .AddEmbed(new DiscordEmbedBuilder()
+                            .WithColor(DiscordColor.SpringGreen)
+                                        .WithTitle($"RP Mission Request for {request.IngameName}")
+                                        .WithImageUrl(requestMember.AvatarUrl)
+                                        .WithThumbnail(Global.LeafSymbol_URL)
+                                        .AddField("IGN:", request.IngameName, true)
+                                        .AddField("RP Mission:", request.RPMission, true)
+                                        .AddField("Timezone:", request.Timezone, true)
+                                        .AddField("Attendees:", request.Attendees)
+                                        .WithFooter($"Request ID: {request.RequestID}"));
+
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder(displayRequest));
+                        break;
+
+                    case "dpdwnDeleteRequest":
+                        string requestDeleted = e.Interaction.Data.Values[0];
+                        var requestIDDeleted = ulong.Parse(requestDeleted);
+                        var serverid_deleted = e.Interaction.Guild.Id;
+
+                        var isRequestDeleted = await DBUtil_RPRequest.DeleteRequestAsync(requestIDDeleted, serverid_deleted);
+
+                        if (isRequestDeleted)
+                        {
+                            var success = new DiscordEmbedBuilder()
+                            {
+                                Color = DiscordColor.SpringGreen,
+                                Title = "Successfully deleted the request!"
+                            };
+
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(success));
+                        }
+                        else
+                        {
+                            var failed = new DiscordEmbedBuilder()
+                            {
+                                Color = DiscordColor.Red,
+                                Title = "Failed to delete the request!"
+                            };
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(failed));
+                        }
+
                         break;
                 }
             }

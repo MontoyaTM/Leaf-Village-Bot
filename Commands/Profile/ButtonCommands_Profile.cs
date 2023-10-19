@@ -1,24 +1,17 @@
 ﻿using DSharpPlus;
 using DSharpPlus.ButtonCommands;
-using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.ModalCommands;
 using Leaf_Village_Bot.DBUtil.Profile;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Leaf_Village_Bot.Commands.Profile
 {
     public class ButtonCommands_Profile : ButtonCommandModule
     {
-        private string LeafSymbolURL = "https://i.imgur.com/spjhOGb.png";
 
-        [ButtonCommand("btnCreateVillagerApplication")]
+        [ButtonCommand("btn_CreateApplication")]
         public async Task CreateVillagerApplication(ButtonContext ctx)
         {
             var modalVillagerApplication = ModalBuilder.Create("ProfileVillagerApplication")
@@ -32,8 +25,7 @@ namespace Leaf_Village_Bot.Commands.Profile
             await ctx.Interaction.CreateResponseAsync(InteractionResponseType.Modal, modalVillagerApplication);
         }
 
-        [ButtonCommand("btnAcceptApplicant")]
-        [RequireRoles(RoleCheckMode.Any, "Hokage")]
+        [ButtonCommand("btn_AcceptApplicant")]
         public async Task AcceptVillager(ButtonContext ctx)
         {
             await ctx.Interaction.DeferAsync(true);
@@ -48,33 +40,37 @@ namespace Leaf_Village_Bot.Commands.Profile
 
                 var geninRole = ctx.Guild.Roles.FirstOrDefault(x => x.Value.Name == "Genin");
 
-                var ingameNameField = ctx.Message.Embeds.Select(x => x.Fields.First().Value);
-                var ingameName = String.Join("", ingameNameField);
+                var memberID = ulong.Parse(embedMessage.Footer.Text);
 
-                var username = await DBUtil_Profile.GetUserNameFromIngameNameAsync(ingameName);
-                var discordMemberID = ctx.Guild.Members.Where(x => x.Value.Username == username.Item2).First().Key;
-                
-                DiscordMember member = await ctx.Guild.GetMemberAsync(discordMemberID);
+                DiscordMember member = await ctx.Guild.GetMemberAsync(memberID);
 
                 await member.GrantRoleAsync(geninRole.Value);
 
                 var guildChannels = await ctx.Interaction.Guild.GetChannelsAsync();
-                var recordsChannel = guildChannels.FirstOrDefault(x => x.Name == "application-records");
+                var acceptedChannel = guildChannels.FirstOrDefault(x => x.Name == "application-accepted");
 
-                await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedMessage);
+                if (acceptedChannel == null)
+                {
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                        .WithContent($"Channel: application-accepted does not exist, please create the channel to store records."));
+                    return;
+                }
+
+                await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(acceptedChannel.Id), embedMessage);
 
                 await ctx.Message.DeleteAsync();
 
                 await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
-                                    .WithContent($"Successfully granted Genin role to {username.Item2}!"));
+                                    .WithContent($"Successfully granted Genin role to {member.Username}!"));
 
             } else
             {
-                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to accept villager for {ctx.Interaction.User.Username}, please check required roles."));
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                    .WithContent($"Unable to accept villager for {ctx.Interaction.User.Username}, please check required roles."));
             }            
         }
 
-        [ButtonCommand("btnDeclineApplicant")]
+        [ButtonCommand("btn_DeclineApplicant")]
         public async Task DeclineVillager(ButtonContext ctx)
         {
             await ctx.Interaction.DeferAsync(true);
@@ -87,88 +83,73 @@ namespace Leaf_Village_Bot.Commands.Profile
             {
                 var embedMessage = ctx.Message.Embeds.First();
 
-                var ingameNameField = ctx.Message.Embeds.Select(x => x.Fields.First().Value);
-                var ingameName = String.Join("", ingameNameField);
+                var memberID = ulong.Parse(embedMessage.Footer.Text);
 
-                var username = await DBUtil_Profile.GetUserNameFromIngameNameAsync(ingameName);
-                var discordMemberID = ctx.Guild.Members.Where(x => x.Value.Username == username.Item2).First().Key;
+                DiscordMember member = await ctx.Guild.GetMemberAsync(memberID);
 
-                DiscordMember member = await ctx.Guild.GetMemberAsync(discordMemberID);
-
-                var isDeleted = await DBUtil_Profile.DeleteVillagerApplication(username.Item2);
-
-                if (isDeleted)
+                var embedReason = new DiscordEmbedBuilder()
                 {
-                    var embedReason = new DiscordEmbedBuilder()
-                    {
-                        Color = DiscordColor.SpringGreen,
-                        Title = "Please enter the reason for denying application as the next message."
-                    };
+                    Color = DiscordColor.SpringGreen,
+                    Title = "Please enter the reason for denying application as the next message."
+                };
 
-                    var followupMessage = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedReason));
-                    var reason = await ctx.Channel.GetNextMessageAsync();
+                var followupMessage = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedReason));
+                var reason = await ctx.Channel.GetNextMessageAsync();
 
-                    await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder().WithContent($"Your response was sent to {username.Item2}."));
+                var embedDenied = new DiscordMessageBuilder()
+                .AddEmbed(new DiscordEmbedBuilder()
+                    .WithColor(DiscordColor.Red)
+                    .WithTitle($"Application Denied")
+                    .WithImageUrl(member.AvatarUrl)
+                    .WithThumbnail(Global.LeafSymbol_URL)
+                    .WithDescription($"{reason.Result.Content}")
+                );
 
-                    await ctx.Message.DeleteAsync();
+                await member.SendMessageAsync(embedDenied);
 
-                    var embedDenied = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithColor(DiscordColor.SpringGreen)
-                        .WithTitle($"Application Denied")
-                        .WithImageUrl(member.AvatarUrl)
-                        .WithThumbnail(LeafSymbolURL)
-                        .WithDescription($"{reason.Result.Content}")
+                await ctx.Message.DeleteAsync();
+                await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder().WithContent($"Your response was sent to {member.Username}."));
+
+                await ctx.Channel.DeleteMessageAsync(reason.Result);
+
+                var guildChannels = await ctx.Interaction.Guild.GetChannelsAsync();
+                var deniedChannel = guildChannels.FirstOrDefault(x => x.Name == "application-denied");
+
+                if (deniedChannel == null)
+                {
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                        .WithContent($"Channel: application-denied does not exist, please create the channel to store records."));
+                    return;
+                }
+
+                var embedFields = embedMessage.Fields;
+                var embedFieldLists = new List<string>();
+
+                foreach (var field in embedFields)
+                {
+                    embedFieldLists.Add(field.Value);
+                }
+
+                var embedApplicationDenied = new DiscordMessageBuilder()
+                .AddEmbed(new DiscordEmbedBuilder()
+                    .WithColor(DiscordColor.Red)
+                    .WithTitle($"Leaf Village Application")
+                    .WithImageUrl(member.AvatarUrl)
+                    .WithThumbnail(Global.LeafSymbol_URL)
+                    .AddField("IGN:", embedFieldLists[0], true)
+                    .AddField("Level:", embedFieldLists[1], true)
+                    .AddField("Masteries:", embedFieldLists[2], true)
+                    .AddField("Clan:", embedFieldLists[3])
+                    .AddField("Alt(s):", embedFieldLists[4])
+                    .WithFooter($"{memberID}\nApplication Denied: \n{reason.Result.Content}\n")
                     );
 
-                    await member.SendMessageAsync(embedDenied);
-
-                    await ctx.Channel.DeleteMessageAsync(reason.Result);
-
-                    var guildChannels = await ctx.Interaction.Guild.GetChannelsAsync();
-                    var recordsChannel = guildChannels.FirstOrDefault(x => x.Name == "application-records");
-
-
-                    var embedFields = embedMessage.Fields;
-                    var embedFieldLists = new List<string>();
-
-                    foreach (var field in embedFields)
-                    {
-                        embedFieldLists.Add(field.Value);
-                    }
-
-                    var embedApplicationDenied = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithColor(DiscordColor.Red)
-                        .WithTitle($"Leaf Village Application")
-                        .WithImageUrl(member.AvatarUrl)
-                        .WithThumbnail(LeafSymbolURL)
-                        .AddField("IGN:", embedFieldLists[0], true)
-                        .AddField("Level:", embedFieldLists[1], true)
-                        .AddField("Masteries:", embedFieldLists[2], true)
-                        .AddField("Clan:", embedFieldLists[3])
-                        .AddField("Alt(s):", embedFieldLists[4])
-                        .WithFooter($"Application Denied: \n{reason.Result.Content}\n")
-                        );
-
-                    await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedApplicationDenied);
-
-                }
-                else
-                {
-                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to deny applicant for {ctx.Interaction.User.Username}, isDeleted  was false!"));
-                }
-
-            } else
+                await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(deniedChannel.Id), embedApplicationDenied);
+            }
+            else
             {
                 await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to deny applicant for {ctx.Interaction.User.Username}, please check required roles."));
             }
         }
-
-
-
-        
-
-
     }
 }

@@ -1,16 +1,11 @@
 ﻿using Leaf_Village_Bot.Config;
 using Npgsql;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Leaf_Village_Bot.DBUtil.Profile
 {
     public class DBUtil_Profile
     {
-        private async Task<string> ConnectionString()
+        private async Task<string> ConnectionStringAsync()
         {
             JSONReader dbConfig = new JSONReader();
             await dbConfig.ReadDBConfigJSONAsync();
@@ -19,101 +14,92 @@ namespace Leaf_Village_Bot.DBUtil.Profile
             return connectionString;
         }
 
-        private async Task<long> GetProfileCountAsync()
+        private async Task<bool> UserExistsAsync(ulong MemberID)
         {
             try
             {
-                string connectionString = await ConnectionString();
+                var connectionString = await ConnectionStringAsync();
 
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     await conn.OpenAsync();
 
                     string query = "SELECT COUNT(*) " +
-                                   "FROM data.userinfo;";
+                                   "FROM data.profiledata " +
+                                  $"WHERE memberid = '{MemberID}';";
+
                     using (var cmd = new NpgsqlCommand(query, conn))
-                    {
-                        var userCount = await cmd.ExecuteScalarAsync();
-                        return Convert.ToInt64(userCount);
-                    };
-                }
-            } catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return -1;
-            }
-        }
-
-        private async Task<bool> UserExistsAsync(string username)
-        {
-            try
-            {
-                var connectionString = await ConnectionString();
-
-                using (var conn = new NpgsqlConnection(connectionString))
-                {
-                    await conn.OpenAsync();
-
-                    string query = "SELECT COUNT(*) " +
-                                   "FROM data.userinfo " +
-                                  $"WHERE username = '{username}';";
-                    using (var cmd = new NpgsqlCommand(query,conn))
                     {
                         var userCount = await cmd.ExecuteScalarAsync();
                         var result = Convert.ToInt32(userCount);
 
-                        if(result <= 0)
+                        if (result <= 0)
                         {
                             return false;
-                        } else
+                        }
+                        else
                         {
                             return true;
                         }
                     }
                 }
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return false;
             }
         }
 
-        public async Task<bool> isEmptyAsync()
+        public async Task<bool> isEmptyAsync(ulong serverid)
         {
-            var count = await GetProfileCountAsync();
-            
-            if(count <= 0)
+            try
             {
+                string connectionString = await ConnectionStringAsync();
+
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+
+                    string query = "SELECT COUNT(*) " +
+                                   "FROM data.profiledata " +
+                                   $"WHERE serverid = {serverid};";
+                    using (var cmd = new NpgsqlCommand(query, conn))
+                    {
+                        var count = await cmd.ExecuteScalarAsync();
+                        var convert = Convert.ToInt16(count);
+
+                        if (convert <= 0)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
                 return true;
-            } else
-            {
-                return false;
             }
         }
 
         public async Task<bool> StoreVillagerApplicationAsync(DBProfile profile)
         {
-            var userExists = await UserExistsAsync(profile.UserName);
+            var userExists = await UserExistsAsync(profile.MemberID);
 
-            if(userExists)
+            if (userExists)
             {
-                Console.WriteLine($"User: {profile.UserName} already exists! Please update your profile!");
+                Console.WriteLine($"MemberID: {profile.MemberID} for User: {profile.UserName} already exists!");
                 return false;
-            }
-
-            var userNo = await GetProfileCountAsync();
-
-            if(userNo == -1)
-            {
-                throw new Exception();
-            } else
-            {
-                userNo += 1;
             }
 
             try
             {
-                var connectionString = await ConnectionString();
+                var connectionString = await ConnectionStringAsync();
 
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
@@ -127,8 +113,9 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                     var alts = string.Join(",", altsArray);
                     var queryAlts = String.Join(",", profile.Alts.Split(',').Select(x => string.Format("'{0}'", x)));
 
-                    string query = "INSERT INTO data.userinfo (userno, username, ingamename, level, clan, masteries , alts) " +
-                                  $"VALUES ('{userNo}', '{profile.UserName}', '{profile.InGameName}', '{profile.Level}', '{profile.Clan}', ARRAY[{queryMasteries}], ARRAY[{queryAlts}]);";
+                    string query = "INSERT INTO data.profiledata (memberid, username, serverid, avatarurl, profileimage, ingamename, level, clan, masteries , alts, fame, raids, organization, orgrank, proctoredmissions) " +
+                                  $"VALUES ('{profile.MemberID}', '{profile.UserName}', '{profile.ServerID}', '{profile.AvatarURL}', '{profile.ProfileImage}', '{profile.InGameName}', " +
+                                  $"'{profile.Level}', '{profile.Clan}', ARRAY[{queryMasteries}], ARRAY[{queryAlts}], '{profile.Fame}', '{profile.Raids}', '{profile.Organization}', '{profile.OrgRank}', '{profile.ProctoredMissions}');";
 
                     using (var cmd = new NpgsqlCommand(query, conn))
                     {
@@ -136,25 +123,26 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                     }
                 }
                 return true;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return false;
             }
         }
 
-        public async Task<bool> DeleteVillagerApplication(string username)
+        public async Task<bool> DeleteVillagerApplication(ulong MemberID)
         {
             try
             {
-                var connectionString = await ConnectionString();
+                var connectionString = await ConnectionStringAsync();
 
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     await conn.OpenAsync();
 
-                    string query = "DELETE FROM data.userinfo " +
-                                 $"WHERE username = '{username}';";
+                    string query = "DELETE FROM data.profiledata " +
+                                 $"WHERE memberid = '{MemberID}';";
 
                     using (var cmd = new NpgsqlCommand(query, conn))
                     {
@@ -162,34 +150,35 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                     }
                 }
                 return true;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return false;
             }
         }
 
-        public async Task<(bool, DBProfile)> GetApplicationFromIngameNameAsync(string ingameName)
+        public async Task<(bool, DBProfile)> GetProfile(ulong MemberID)
         {
-            DBProfile profile = null;
-
             try
             {
-                string connectionString = await ConnectionString();
+                DBProfile profile = null;
+
+                string connectionString = await ConnectionStringAsync();
 
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     await conn.OpenAsync();
 
-                    string query = "SELECT u.ingamename, u.level, ARRAY_TO_STRING(u.masteries, ','), u.clan, ARRAY_TO_STRING(u.alts, ',') " +
-                                   "FROM data.userinfo u " +
-                                  $"WHERE ingamename = '{ingameName}'";
+                    string query = "SELECT p.ingamename, p.level, ARRAY_TO_STRING(p.masteries, ','), p.clan, p.organization, p.orgrank, p.raids, p.fame, p.avatarurl, p.profileimage, p.proctoredmissions " +
+                                   "FROM data.profiledata p " +
+                                  $"WHERE memberid = ' {MemberID}'";
 
                     using (var cmd = new NpgsqlCommand(query, conn))
                     {
                         var reader = await cmd.ExecuteReaderAsync();
 
-                        while(await reader.ReadAsync())
+                        while (await reader.ReadAsync())
                         {
                             profile = new DBProfile
                             {
@@ -197,49 +186,93 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                                 Level = reader.GetInt32(1),
                                 Masteries = reader.GetString(2),
                                 Clan = reader.GetString(3),
-                                Alts = reader.GetString(4),
+                                Organization = reader.GetString(4),
+                                OrgRank = reader.GetString(5),
+                                Raids = reader.GetInt32(6),
+                                Fame = reader.GetInt32(7),
+                                AvatarURL = reader.GetString(8),
+                                ProfileImage = reader.GetString(9),
+                                ProctoredMissions = reader.GetInt32(10)
                             };
                         }
+
                     }
                 }
+
                 return (true, profile);
-            } catch (Exception ex)
+
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return (false, null);
             }
         }
 
-        public async Task<(bool, string)> GetUserNameFromIngameNameAsync(string ingameName)
+        public async Task<bool> UpdateProfileImage(ulong MemberID, string ImageURL)
         {
-            string username;
-
             try
             {
-                string connectionString = await ConnectionString();
+                string connectionString = await ConnectionStringAsync();
 
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     await conn.OpenAsync();
-                    string query = "SELECT username " +
-                                   "FROM data.userinfo " +
-                                  $"WHERE ingamename = '{ingameName}';";
+
+                    string query = "UPDATE data.profiledata " +
+                                  $"SET profileimage = '{ImageURL}' " +
+                                  $"WHERE memberid = {MemberID};";
+
+                    using (var cmd = new NpgsqlCommand(query, conn))
+                    {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                return true;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<(bool, string)> GetProfileImageAsync(ulong MemberID)
+        {
+            try
+            {
+                string connectionString = await ConnectionStringAsync();
+                string profileURL = String.Empty;
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+                    
+                    string query = "SELECT p.profileimage " +
+                                   "FROM data.profiledata p " +
+                                  $"WHERE memberid = {MemberID};";
+
                     using (var cmd = new NpgsqlCommand(query, conn))
                     {
                         var reader = await cmd.ExecuteReaderAsync();
                         await reader.ReadAsync();
 
-                        username = reader.GetString(0);
+                        profileURL = reader.GetString(0);
                     }
                 }
 
-                return (true, username);
+                return (true, profileURL);
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return (false, string.Empty);
+                return (false, String.Empty);
             }
         }
+
+
+
     }
 }
