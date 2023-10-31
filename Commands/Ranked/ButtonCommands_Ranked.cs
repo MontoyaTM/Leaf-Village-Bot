@@ -64,10 +64,10 @@ namespace Leaf_Village_Bot.Commands.Ranked
                     Color = DiscordColor.SpringGreen,
                     Title = "Please provide a (screenshot and a detailed description) of your RP Mission as the next message in this channel."
                 };
+                
                 var followupMessage_1 = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMessage1));
 
                 var details = await ctx.Channel.GetNextMessageAsync();
-               
 
                 if (details.Result.Attachments.Count ==  0)
                 {

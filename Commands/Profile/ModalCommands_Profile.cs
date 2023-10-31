@@ -30,7 +30,7 @@ namespace Leaf_Village_Bot.Commands.Profile
             {
                 var level = int.Parse(modalValues.ElementAt(1));
 
-                if(level <= 0 || level < 60)
+                if(level <= 0 || level > 60)
                 {
                     await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Level field must within 1-60!"));
                     return;
@@ -78,7 +78,7 @@ namespace Leaf_Village_Bot.Commands.Profile
                     return;
                 }
 
-                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Succesfully created ticket for {ctx.Interaction.User.Username}"));
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Succesfully created a villager application for {ctx.Interaction.User.Username}"));
 
                 var embedApplication = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()

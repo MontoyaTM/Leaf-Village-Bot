@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.ButtonCommands.Extensions;
+using DSharpPlus.Net.Models;
 
 namespace Leaf_Village_Bot.Commands.Hokage
 {
@@ -27,15 +28,19 @@ namespace Leaf_Village_Bot.Commands.Hokage
                     .WithTitle("Leaf Village Hokage Dashboard")
                     .WithThumbnail(Global.LeafSymbol_URL)
                     .WithImageUrl(Global.HokageNPC_URL)
-                    .AddField("Delete Application:", "Enter the Member ID of the application you wish to delete. This will remove the application from the database, allowing the individual to create a new villager application.")
+                    .AddField("Delete Application:", "Enter the Member ID of the applicant you wish to delete. This will remove the data stored in the database of the user, allowing the individual to create a new villager application.")
                 )
                 .AddComponents(new DiscordComponent[]
                 {
-                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_DeleteApplication"), "Delete Application")
+                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_DeleteApplication"), "Delete Application"),
+                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_VillageRaid"), "++ Raid")
                 });
 
             await ctx.Message.DeleteAsync();
             await ctx.Channel.SendMessageAsync(embedDashboard);
         }
+
+        
+
     }
 }

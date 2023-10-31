@@ -1,5 +1,5 @@
 ﻿{
-  "host": "token",
+  "host": "host",
   "username": "username",
   "password": "password",
   "database": "database"

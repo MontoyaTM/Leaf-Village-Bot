@@ -62,7 +62,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
                 var reason = await ctx.Channel.GetNextMessageAsync();
 
                 var embedFields = embedMessage.Fields;
-                var profileImage = await DBUtil_Profile.GetProfileImageAsync(ctx.Interaction.User.Id);
+                var image = ctx.Interaction.User.AvatarUrl;
                 var embedFieldLists = new List<string>();
 
                 foreach (var field in embedFields)
@@ -75,7 +75,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithColor(DiscordColor.SpringGreen)
                     .WithTitle($"Leaf Military Police Force Report")
-                    .WithImageUrl(profileImage.Item2)
+                    .WithImageUrl(image)
                     .WithThumbnail(Global.LeafSymbol_URL)
                     .AddField("Plantiff:", embedFieldLists[0], true)
                     .AddField("Defendant:", embedFieldLists[1], true)

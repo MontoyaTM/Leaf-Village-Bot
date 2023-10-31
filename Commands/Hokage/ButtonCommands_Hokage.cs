@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Leaf_Village_Bot.DBUtil.Profile;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus;
+using DSharpPlus.Net.Models;
 
 namespace Leaf_Village_Bot.Commands.Hokage
 {
@@ -74,14 +76,61 @@ namespace Leaf_Village_Bot.Commands.Hokage
 
                     await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder().AddEmbed(failed));
                 }
+            } else
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to delete application for {ctx.Interaction.User.Username}, please check required roles."));
             }
         }
 
+        [ButtonCommand("btn_VillageRaid")]
+        public async Task VillageRaid(ButtonContext ctx)
+        {
+            await ctx.Interaction.DeferAsync(true);
 
+            var hasHokageRole = ctx.Member.Roles.Any(x => x.Name == "Hokage");
 
+            if (hasHokageRole)
+            {
+                var DBUtil_Profile = new DBUtil_Profile();
 
+                var guildChannels = await ctx.Guild.GetChannelsAsync();
+                var raidChannel = guildChannels.FirstOrDefault(x => x.Name == "Village Raid");
 
+                if (raidChannel == null)
+                {
+                    var embedFailed = new DiscordEmbedBuilder()
+                    {
+                        Title = "Villager Raid Failed",
+                        Color = DiscordColor.Red,
+                        Description = "Channel: Village Raid does not exist!"
+                    };
 
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
+                    return;
+                }
 
+                var Members = raidChannel.Users.ToList();
+
+                foreach(var member in Members)
+                {
+                    var isUpdated =  await DBUtil_Profile.UpdateRaid(member.Id);
+
+                    if (!isUpdated)
+                    {
+                        await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"{member.Nickname} raid stat was not updated!"));
+                    }
+                }
+
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Successfully increased all Member's Raids stat!"));
+
+            } else
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to delete application for {ctx.Interaction.User.Username}, please check required roles."));
+            }
+
+                
+            
+        }
     }
 }
+

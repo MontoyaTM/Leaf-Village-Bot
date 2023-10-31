@@ -1,5 +1,8 @@
 ﻿using Leaf_Village_Bot.Config;
 using Npgsql;
+using System.Reflection.Emit;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using String = System.String;
 
 namespace Leaf_Village_Bot.DBUtil.Profile
 {
@@ -158,6 +161,7 @@ namespace Leaf_Village_Bot.DBUtil.Profile
             }
         }
 
+        #region Retrieve Profile Data
         public async Task<(bool, DBProfile)> GetProfile(ulong MemberID)
         {
             try
@@ -209,36 +213,6 @@ namespace Leaf_Village_Bot.DBUtil.Profile
             }
         }
 
-        public async Task<bool> UpdateProfileImage(ulong MemberID, string ImageURL)
-        {
-            try
-            {
-                string connectionString = await ConnectionStringAsync();
-
-                using (var conn = new NpgsqlConnection(connectionString))
-                {
-                    await conn.OpenAsync();
-
-                    string query = "UPDATE data.profiledata " +
-                                  $"SET profileimage = '{ImageURL}' " +
-                                  $"WHERE memberid = {MemberID};";
-
-                    using (var cmd = new NpgsqlCommand(query, conn))
-                    {
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                }
-
-                return true;
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return false;
-            }
-        }
-
         public async Task<(bool, string)> GetProfileImageAsync(ulong MemberID)
         {
             try
@@ -271,8 +245,147 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                 return (false, String.Empty);
             }
         }
+        #endregion
+
+        #region Update Profile
+        public async Task<bool> UpdateProfile(ulong MemberID, DBProfile profile)
+        {
+            try
+            {
+                string connectionString = await ConnectionStringAsync();
+
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+
+                    string query = "UPDATE data.profiledata " +
+                                  $"SET  ingamename = '{profile.InGameName}', level = {profile.Level}, masteries = ARRAY['{profile.Masteries}'], clan = '{profile.Clan}' " +
+                                  $"WHERE memberid = {MemberID};";
+
+                    using (var cmd = new NpgsqlCommand(query, conn))
+                    {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                return true;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateProfileImage(ulong MemberID, string ImageURL)
+        {
+            try
+            {
+                string connectionString = await ConnectionStringAsync();
+
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+
+                    string query = "UPDATE data.profiledata " +
+                                  $"SET profileimage = '{ImageURL}' " +
+                                  $"WHERE memberid = {MemberID};";
+
+                    using (var cmd = new NpgsqlCommand(query, conn))
+                    {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                return true;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateLevel(ulong MemberID, int Level)
+        {
+            try
+            {
+                string connectionString = await ConnectionStringAsync();
+
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+                    string query = "UPDATE data.profiledata " +
+                    $"SET  level = {Level} " +
+                    $"WHERE memberid = {MemberID};";
+                    using (var cmd = new NpgsqlCommand(query, conn))
+                    {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+                return true;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateRaid(ulong MemberID)
+        {
+            try
+            {
+                string connectionString = await ConnectionStringAsync();
+
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+                    string query = "UPDATE data.profiledata " +
+                                  $"SET raids = raids + 1 " +
+                                  $"WHERE memberid = {MemberID};";
+                    using (var cmd = new NpgsqlCommand(query, conn))
+                    {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+                return true;
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
 
 
+        public async Task<bool> UpdateFame(ulong MemberID)
+        {
+            try
+            {
+                string connectionString = await ConnectionStringAsync();
 
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+                    string query = "UPDATE data.profiledata " +
+                                   "SET fame = fame + 1 " +
+                                  $"WHERE memberid = {MemberID};";
+                    
+                    using (var cmd = new NpgsqlCommand(query,conn))
+                    {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+                return true;
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+        #endregion
     }
 }

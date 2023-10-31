@@ -20,10 +20,10 @@ namespace Leaf_Village_Bot
         {
             var random = new Random();
 
-            ulong minValue = 1000000000000000000;
-            ulong maxValue = 9999999999999999999;
+            ulong minValue = 10000000000000000;
+            ulong maxValue = 99999999999999999;
 
-            ulong randomNumber = (ulong)random.Next((int)(minValue >> 32), int.MaxValue) << 32 | (ulong)random.Next();
+            ulong randomNumber = ((ulong)random.Next((int)(minValue >> 32), int.MaxValue) << 32) | ((ulong)random.Next());
             ulong result = randomNumber % (maxValue - minValue + 1) + minValue;
 
             return result;

@@ -17,6 +17,9 @@ using DSharpPlus.Entities;
 using Leaf_Village_Bot.Commands.Ranked;
 using Leaf_Village_Bot.DBUtil.RPRequest;
 using Leaf_Village_Bot.Commands.Hokage;
+using DSharpPlus.CommandsNext.Exceptions;
+using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.SlashCommands.Attributes;
 
 namespace Leaf_Village_Bot
 {
@@ -92,6 +95,7 @@ namespace Leaf_Village_Bot
 
 
             slashCommands.RegisterCommands<SlashCommands_Profile>();
+            slashCommands.RegisterCommands<SlashCommands_Hokage>();
 
             ButtonCommands.RegisterButtons<ButtonCommands_Profile>();
             ButtonCommands.RegisterButtons<ButtonCommands_LMPF>();
@@ -103,6 +107,7 @@ namespace Leaf_Village_Bot
             ModalCommands.RegisterModals<ModalCommands_LMPF>();
 
             Commands.CommandErrored += OnCommandErrored;
+            slashCommands.SlashCommandErrored += OnSlashCommandErrored;
 
             // 8. Button Commands Event Handler
             ButtonCommands.ButtonCommandExecuted += ButtonCommands_ButtonCommandExecuted;
@@ -115,6 +120,30 @@ namespace Leaf_Village_Bot
             // 10. Connecting... Bot Online
             await Client.ConnectAsync();
             await Task.Delay(-1);
+        }
+
+        private static async Task OnSlashCommandErrored(SlashCommandsExtension sender, DSharpPlus.SlashCommands.EventArgs.SlashCommandErrorEventArgs args)
+        {
+            if (args.Exception is SlashExecutionChecksFailedException exception)
+            {
+                string timeLeft = string.Empty;
+                foreach (var check in exception.FailedChecks)
+                {
+                    var cooldown = (SlashCooldownAttribute)check;
+                    timeLeft = cooldown.GetRemainingCooldown(args.Context).ToString(@"hh\:mm\:ss");
+                }
+
+                var coolDownMessage = new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Please wait for the cooldown to end.",
+                    Description = $"Time: {timeLeft}"
+                };
+                
+                await args.Context.CreateResponseAsync(coolDownMessage);
+            }
+
+            
         }
 
         private static Task OnCommandErrored(CommandsNextExtension sender, CommandErrorEventArgs args)
