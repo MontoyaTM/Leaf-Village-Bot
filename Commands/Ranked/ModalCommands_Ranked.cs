@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using Leaf_Village_Bot.DBUtil.Profile;
 
 namespace Leaf_Village_Bot.Commands.Ranked
 {
@@ -22,6 +23,7 @@ namespace Leaf_Village_Bot.Commands.Ranked
 
             var modalValues = ctx.Values;
             var DBUtil_RPRequest = new DBUtil_RPRequest();
+            var DBUtil_Profile = new DBUtil_Profile();
 
             ButtonCommandsExtension buttonCommand = ctx.Client.GetButtonCommands();
 
@@ -38,6 +40,7 @@ namespace Leaf_Village_Bot.Commands.Ranked
             };
 
             var isStored = await DBUtil_RPRequest.StoreRequestAsync(requestInfo);
+            var isRetrieved = await DBUtil_Profile.GetProfileImageAsync(ctx.Interaction.User.Id);
 
             if(isStored)
             {
@@ -47,7 +50,7 @@ namespace Leaf_Village_Bot.Commands.Ranked
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithColor(DiscordColor.SpringGreen)
                                     .WithTitle($"RP Mission Request for {requestInfo.IngameName}")
-                                    .WithImageUrl(ctx.Interaction.User.AvatarUrl)
+                                    .WithImageUrl(isRetrieved.Item2)
                                     .WithThumbnail(Global.LeafSymbol_URL)
                                     .AddField("IGN:", requestInfo.IngameName, true)
                                     .AddField("RP Mission:", requestInfo.RPMission, true)

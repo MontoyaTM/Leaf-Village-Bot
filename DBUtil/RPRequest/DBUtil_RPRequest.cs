@@ -12,7 +12,7 @@ namespace Leaf_Village_Bot.DBUtil.RPRequest
 {
     public class DBUtil_RPRequest
     {
-        private async Task<string> ConnectionString()
+        private async Task<string> ConnectionStringAsync()
         {
             JSONReader dbConfig = new JSONReader();
             await dbConfig.ReadDBConfigJSONAsync();
@@ -25,7 +25,7 @@ namespace Leaf_Village_Bot.DBUtil.RPRequest
         {
             try
             {
-                string connectionString = await ConnectionString();
+                string connectionString = await ConnectionStringAsync();
 
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
@@ -61,7 +61,7 @@ namespace Leaf_Village_Bot.DBUtil.RPRequest
         {
             try
             {
-                string connectionString = await ConnectionString();
+                string connectionString = await ConnectionStringAsync();
 
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
@@ -87,7 +87,7 @@ namespace Leaf_Village_Bot.DBUtil.RPRequest
         {
             try
             {
-                string connectionString = await ConnectionString();
+                string connectionString = await ConnectionStringAsync();
 
                 DBRPRequest request;
 
@@ -130,7 +130,7 @@ namespace Leaf_Village_Bot.DBUtil.RPRequest
         {
             try
             {
-                string connectionString = await ConnectionString();
+                string connectionString = await ConnectionStringAsync();
 
                 List<DBRPRequest> requests = new List<DBRPRequest>();
                 DBRPRequest request;
@@ -172,7 +172,7 @@ namespace Leaf_Village_Bot.DBUtil.RPRequest
         {
             try
             {
-                string connectionString = await ConnectionString();
+                string connectionString = await ConnectionStringAsync();
 
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
@@ -196,11 +196,11 @@ namespace Leaf_Village_Bot.DBUtil.RPRequest
 
         }
 
-        public async Task<bool> UpdateRankedMissions(ulong memberid)
+        public async Task<bool> UpdateProctoredMissionsAsync(ulong memberid)
         {
             try
             {
-                string connectionString = await ConnectionString();
+                string connectionString = await ConnectionStringAsync();
 
                 using (var conn = new NpgsqlConnection(connectionString))
                 {

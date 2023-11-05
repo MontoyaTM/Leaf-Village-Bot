@@ -58,6 +58,14 @@ namespace Leaf_Village_Bot.Commands.Profile
                 Alts = modalValues.ElementAt(4),
             };
 
+            var applicationExists = await DBUtil_Profile.UserExistsAsync(userInfo.MemberID);
+
+            if(applicationExists)
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to submit application, please be aware of one application per user."));
+                return;
+            }
+
             var isApplicationStored = await DBUtil_Profile.StoreVillagerApplicationAsync(userInfo);
 
             if (isApplicationStored == true)
@@ -100,7 +108,7 @@ namespace Leaf_Village_Bot.Commands.Profile
                 await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(villagerApplicationsChannel.Id), embedApplication);
             } else
             {
-                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Please be aware of one application per user!"));
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to created application for {ctx.Interaction.User.Username}."));
             }
         }
     }

@@ -32,7 +32,7 @@ namespace Leaf_Village_Bot.Commands.Profile
 
             var DBUtil_Profile = new DBUtil_Profile();
 
-            var hasLMPFRole = ctx.Member.Roles.Any(x => x.Name == "Hokage");
+            var hasLMPFRole = ctx.Member.Roles.Any(x => x.Name == "Hokage" || x.Name == "Council");
 
             if (hasLMPFRole)
             {
@@ -77,10 +77,11 @@ namespace Leaf_Village_Bot.Commands.Profile
 
             var DBUtil_Profile = new DBUtil_Profile();
 
-            var hasLMPFRole = ctx.Member.Roles.Any(x => x.Name == "Hokage");
+            var hasLMPFRole = ctx.Member.Roles.Any(x => x.Name == "Hokage" || x.Name == "Council");
 
             if (hasLMPFRole)
             {
+                var interactivity = ctx.Client.GetInteractivity();
                 var embedMessage = ctx.Message.Embeds.First();
 
                 var memberID = ulong.Parse(embedMessage.Footer.Text);
@@ -94,7 +95,7 @@ namespace Leaf_Village_Bot.Commands.Profile
                 };
 
                 var followupMessage = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedReason));
-                var reason = await ctx.Channel.GetNextMessageAsync();
+                var reason = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
 
                 var embedDenied = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder()

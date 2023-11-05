@@ -21,10 +21,12 @@ namespace Leaf_Village_Bot.Commands.Hokage
 
             var DBUtil_Profile = new DBUtil_Profile();
 
-            var hasLMPFRole = ctx.Member.Roles.Any(x => x.Name == "Hokage");
+            var hasRole = ctx.Member.Roles.Any(x => x.Name == "Hokage" || x.Name == "Council");
 
-            if(hasLMPFRole)
+            if (hasRole)
             {
+                var interactivity = ctx.Client.GetInteractivity();
+
                 var embedMessage = new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.SpringGreen,
@@ -32,7 +34,7 @@ namespace Leaf_Village_Bot.Commands.Hokage
                 };
                 var followupMessage = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMessage));
 
-                var nextMessage = await ctx.Channel.GetNextMessageAsync();
+                var nextMessage = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
                 var memberID = ulong.Parse(nextMessage.Result.Content);
                 DiscordMember member = null;
 
@@ -53,7 +55,7 @@ namespace Leaf_Village_Bot.Commands.Hokage
                     return;
                 }
 
-                var isDeleted = await DBUtil_Profile.DeleteVillagerApplication(memberID);
+                var isDeleted = await DBUtil_Profile.DeleteVillagerApplicationAsync(memberID);
 
                 await ctx.Channel.DeleteMessageAsync(nextMessage.Result);
 
@@ -87,9 +89,9 @@ namespace Leaf_Village_Bot.Commands.Hokage
         {
             await ctx.Interaction.DeferAsync(true);
 
-            var hasHokageRole = ctx.Member.Roles.Any(x => x.Name == "Hokage");
+            var hasRole = ctx.Member.Roles.Any(x => x.Name == "Hokage" || x.Name == "Council");
 
-            if (hasHokageRole)
+            if (hasRole)
             {
                 var DBUtil_Profile = new DBUtil_Profile();
 
@@ -113,7 +115,7 @@ namespace Leaf_Village_Bot.Commands.Hokage
 
                 foreach(var member in Members)
                 {
-                    var isUpdated =  await DBUtil_Profile.UpdateRaid(member.Id);
+                    var isUpdated =  await DBUtil_Profile.UpdateRaidAsync(member.Id);
 
                     if (!isUpdated)
                     {
@@ -127,10 +129,66 @@ namespace Leaf_Village_Bot.Commands.Hokage
             {
                 await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to delete application for {ctx.Interaction.User.Username}, please check required roles."));
             }
-
-                
-            
         }
+
+        [ButtonCommand("btn_GetAltList")]
+        public async Task GetAltList(ButtonContext ctx)
+        {
+            await ctx.Interaction.DeferAsync(true);
+
+            var hasRole = ctx.Member.Roles.Any(x => x.Name == "Hokage" || x.Name == "Council");
+
+            if (hasRole)
+            {
+                var DBUtil_Profile = new DBUtil_Profile();
+                var interactivity = ctx.Client.GetInteractivity();
+
+                var embedMessage = new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.SpringGreen,
+                    Title = "Enter the MemberID of the user you wish to retrieve alt(s) from as the next message in this channel."
+                };
+                var followupMessage = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMessage));
+
+                var nextMessage = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
+                
+                var memberID = ulong.Parse(nextMessage.Result.Content);
+
+                var isRetrieved = await DBUtil_Profile.GetAltsListAsync(memberID);
+                DiscordMember member = null;
+
+                try
+                {
+                    member = await ctx.Guild.GetMemberAsync(memberID);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+
+                    var invalidUser = new DiscordEmbedBuilder()
+                    {
+                        Color = DiscordColor.Red,
+                        Title = $"MemberID does not match any existing villager application, please double check the MemberID!"
+                    };
+                    await ctx.Channel.DeleteMessageAsync(nextMessage.Result);
+                    await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder().AddEmbed(invalidUser));
+                    return;
+                }
+                await ctx.Channel.DeleteMessageAsync(nextMessage.Result);
+                var embedAlts = new DiscordMessageBuilder()
+                .AddEmbed(new DiscordEmbedBuilder()
+                    .WithColor(DiscordColor.Red)
+                    .WithTitle($"{member.Username} Alt(s) List:")
+                    .WithDescription(isRetrieved.Item2)
+                    .WithThumbnail(Global.LeafSymbol_URL)
+                    .WithImageUrl(member.AvatarUrl)
+                );
+
+                await ctx.Channel.SendMessageAsync(embedAlts);
+            }
+        }
+
+
     }
 }
 

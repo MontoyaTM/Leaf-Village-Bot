@@ -4,6 +4,7 @@ using DSharpPlus.ButtonCommands.Extensions;
 using DSharpPlus.Entities;
 using DSharpPlus.ModalCommands;
 using DSharpPlus.ModalCommands.Attributes;
+using Leaf_Village_Bot.DBUtil.Profile;
 using Leaf_Village_Bot.DBUtil.ReportTicket;
 
 namespace Leaf_Village_Bot.Commands.LMPF
@@ -17,6 +18,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
 
             var modalValues = ctx.Values;
             var DBUtil_TicketSystem = new DBUtil_ReportTicket();
+            var DBUtil_Profile = new DBUtil_Profile();
 
             ButtonCommandsExtension buttonCommand = ctx.Client.GetButtonCommands();
 
@@ -33,6 +35,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
             };
 
             var isStored = await DBUtil_TicketSystem.StoreReportAsync(ticketInfo);
+            var isRetrieved = await DBUtil_Profile.GetProfileImageAsync(ticketInfo.MemberID);
 
             if (isStored)
             {
@@ -43,7 +46,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithColor(DiscordColor.SpringGreen)
                                     .WithTitle("Leaf Military Police Report System")
-                                    .WithImageUrl(member.AvatarUrl)
+                                    .WithImageUrl(isRetrieved.Item2)
                                     .WithThumbnail(Global.LeafSymbol_URL)
                                     .AddField("Plantiff:", ticketInfo.Plantiff, true)
                                     .AddField("Defendant:", ticketInfo.Defendant, true)

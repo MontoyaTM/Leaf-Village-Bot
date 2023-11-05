@@ -34,6 +34,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
             if (hasLMPFRole)
             {
                 var DBUtil_Profile = new DBUtil_Profile();
+
                 var guildChannels = await ctx.Interaction.Guild.GetChannelsAsync();
                 var recordsChannel = guildChannels.FirstOrDefault(x => x.Name == "report-records");
 
@@ -45,37 +46,59 @@ namespace Leaf_Village_Bot.Commands.LMPF
                 }
 
                 var embedMessage = ctx.Message.Embeds.First();
-                var geninRole = ctx.Guild.Roles.FirstOrDefault(x => x.Value.Name == "Genin");
 
+                var geninRole = ctx.Guild.Roles.FirstOrDefault(x => x.Value.Name == "Genin");
                 var OverWriteBuilderList = new DiscordOverwriteBuilder[] { new DiscordOverwriteBuilder(geninRole.Value).Deny(Permissions.SendMessages) };
 
                 await ctx.Channel.ModifyAsync(x => x.PermissionOverwrites = OverWriteBuilderList);
 
+                var interactivity = ctx.Client.GetInteractivity();
+
                 var embedReason = new DiscordEmbedBuilder()
                 {
                     Color = DiscordColor.SpringGreen,
-                    Title = "Please enter the conclusion of the investigation as the next message in this channel."
+                    Title = "Please enter the conclusion of the investigation as the next message in this channel along with a screenshot."
                 };
-
+                
                 var followupMessage = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedReason));
+                
+                var reason = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
 
-                var reason = await ctx.Channel.GetNextMessageAsync();
+                if (reason.Result.Attachments.Count == 0)
+                {
+                    await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder().WithContent("There was no screenshot, try again!"));
+                    return;
+                }
+
+                DiscordAttachment image = reason.Result.Attachments[0];
+
+                HttpClient client = new HttpClient();
+                Stream stream = await client.GetStreamAsync(image.Url);
+
+                using (var fileStream = new FileStream("Images/output.png", FileMode.Create))
+                {
+                    stream.CopyTo(fileStream);
+                }
+
+                FileStream file = new FileStream("Images/output.png", FileMode.Open, FileAccess.Read);
+
+                var embedImage = new DiscordMessageBuilder()
+                    .AddFile(file);
 
                 var embedFields = embedMessage.Fields;
-                var image = ctx.Interaction.User.AvatarUrl;
                 var embedFieldLists = new List<string>();
 
                 foreach (var field in embedFields)
                 {
                     embedFieldLists.Add(field.Value);
                 }
-
+                var isRetrieved = await DBUtil_Profile.GetProfileImageAsync(ctx.Interaction.User.Id);
 
                 var embedReportRecord = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithColor(DiscordColor.SpringGreen)
                     .WithTitle($"Leaf Military Police Force Report")
-                    .WithImageUrl(image)
+                    .WithImageUrl(isRetrieved.Item2)
                     .WithThumbnail(Global.LeafSymbol_URL)
                     .AddField("Plantiff:", embedFieldLists[0], true)
                     .AddField("Defendant:", embedFieldLists[1], true)
@@ -86,6 +109,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
                     );
 
                 await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedReportRecord);
+                await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedImage);
 
                 await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder()
                     .WithContent($"Your response was sent to the report-records channel."));

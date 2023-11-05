@@ -40,6 +40,7 @@ namespace Leaf_Village_Bot.Commands.Ranked
 
             if (hasRankedRole)
             {
+                var interactivity = ctx.Client.GetInteractivity();
                 var DBUtil_RPRequest = new DBUtil_RPRequest();
                 var DBUtil_Profile = new DBUtil_Profile();
 
@@ -67,11 +68,11 @@ namespace Leaf_Village_Bot.Commands.Ranked
                 
                 var followupMessage_1 = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMessage1));
 
-                var details = await ctx.Channel.GetNextMessageAsync();
+                var details = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
 
                 if (details.Result.Attachments.Count ==  0)
                 {
-                    await ctx.Interaction.EditFollowupMessageAsync(followupMessage_1.Id, new DiscordWebhookBuilder().WithContent("There was no screenshot!"));
+                    await ctx.Interaction.EditFollowupMessageAsync(followupMessage_1.Id, new DiscordWebhookBuilder().WithContent("There was no screenshot, try again!"));
                     return;                
                 }
 
@@ -90,7 +91,7 @@ namespace Leaf_Village_Bot.Commands.Ranked
                 var embedImage = new DiscordMessageBuilder()
                     .AddFile(file);
 
-                await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedImage);
+                
 
                 var embedMessage2 = new DiscordEmbedBuilder()
                 {
@@ -99,7 +100,7 @@ namespace Leaf_Village_Bot.Commands.Ranked
                             "\n\n Ex. Ninja1, Ninja2, Ninja3"
                 };
                 await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMessage2));
-                var attendees = await ctx.Channel.GetNextMessageAsync();
+                var attendees = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
 
                 var embedMessage3 = new DiscordEmbedBuilder()
                 {
@@ -108,7 +109,7 @@ namespace Leaf_Village_Bot.Commands.Ranked
                             "\n\nmm/day/yyyy"
                 };
                 await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMessage3));
-                var datetime = await ctx.Channel.GetNextMessageAsync();
+                var datetime = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
 
                 var embedFields = embedMessage.Fields;
                 var profileImage = await DBUtil_Profile.GetProfileImageAsync(ctx.Interaction.User.Id);
@@ -130,12 +131,13 @@ namespace Leaf_Village_Bot.Commands.Ranked
                         .AddField("Date/Time:", datetime.Result.Content)
                         .AddField("Attendees", attendees.Result.Content)
                         .AddField("Details:", details.Result.Content)
-                        .WithFooter($"{ctx.Interaction.User.Username} had successfully proctored an RP mission! Congratulations!")
+                        .WithFooter($"{ctx.Interaction.User.Username} had successfully proctored an RP mission and has incremented their proctored missions stat! Congratulations!")
                     );
 
                 await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedRPRecord);
+                await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedImage);
 
-                await DBUtil_RPRequest.UpdateRankedMissions(ctx.Interaction.User.Id);
+                await DBUtil_RPRequest.UpdateProctoredMissionsAsync(ctx.Interaction.User.Id);
 
                 await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Your response was sent to the rp-records channel."));
 
