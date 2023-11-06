@@ -37,7 +37,7 @@ namespace Leaf_Village_Bot.Commands.Ranked
                     )
                 .AddComponents(new DiscordComponent[]
                 {
-                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_CreateRequest"), "Create RP Request")
+                    new DiscordButtonComponent(ButtonStyle.Success, buttonCommand.BuildButtonId("btn_CreateRequest"), "Create RP Request")
                 });
 
             await ctx.Channel.SendMessageAsync(embedSupportForm);
@@ -67,7 +67,7 @@ namespace Leaf_Village_Bot.Commands.Ranked
                 {
                     new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_ViewRequest"), "View RP Requests"),
                     new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_GetRequest"), "Get RP Requests"),
-                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_DeleteRequest"), "Delete RP Request"),
+                    new DiscordButtonComponent(ButtonStyle.Danger, buttonCommand.BuildButtonId("btn_DeleteRequest"), "Delete RP Request"),
                 });
 
             await ctx.Channel.SendMessageAsync(embedRankedDashboard);

@@ -37,7 +37,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
                     )
                 .AddComponents(new DiscordComponent[]
                 {
-                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_CreateTicket"), "Create Report")
+                    new DiscordButtonComponent(ButtonStyle.Success, buttonCommand.BuildButtonId("btn_CreateTicket"), "Create Report")
                 });
 
             await ctx.Channel.SendMessageAsync(embedSupportForm);
@@ -66,7 +66,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
                 {
                     new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_ViewTicket"), "View Tickets"),
                     new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_GetTicket"), "Get Ticket"),
-                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_DeleteTicket"), "Delete Ticket")
+                    new DiscordButtonComponent(ButtonStyle.Danger, buttonCommand.BuildButtonId("btn_DeleteTicket"), "Delete Ticket")
                 });
 
             await ctx.Message.DeleteAsync();

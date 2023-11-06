@@ -111,9 +111,6 @@ namespace Leaf_Village_Bot.Commands.LMPF
                 await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedReportRecord);
                 await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedImage);
 
-                await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder()
-                    .WithContent($"Your response was sent to the report-records channel."));
-
                 await ctx.Channel.DeleteAsync();
             } else
             {

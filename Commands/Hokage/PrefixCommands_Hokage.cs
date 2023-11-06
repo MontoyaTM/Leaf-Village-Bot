@@ -28,7 +28,8 @@ namespace Leaf_Village_Bot.Commands.Hokage
                     .WithTitle("Leaf Village Hokage Dashboard")
                     .WithThumbnail(Global.LeafSymbol_URL)
                     .WithImageUrl(Global.HokageNPC_URL)
-                    .AddField("Delete Application:", "Enter the Member ID of the applicant you wish to delete. This will remove the data stored in the database of the user, allowing the individual to create a new villager application.")
+                    .AddField("Delete Application", "Enter the Member ID of the applicant you wish to delete. This will remove the data stored in the database of the user, allowing the individual to create a new villager application.")
+                    .AddField("Retrieve Alt(s)", "Enter the Member ID of the user you want to retrieve a list of alt(s). An embeded list of alt(s) will be sent in this channel.")
                     .AddField("Raid++", "Raid++ increments the Raid stat for each user in the Village Raid voice channel.")
                 )
                 .AddComponents(new DiscordComponent[]

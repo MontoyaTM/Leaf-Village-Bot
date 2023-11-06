@@ -9,6 +9,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus;
 using DSharpPlus.Net.Models;
+using DSharpPlus.Interactivity;
 
 namespace Leaf_Village_Bot.Commands.Hokage
 {
@@ -19,64 +20,48 @@ namespace Leaf_Village_Bot.Commands.Hokage
         {
             await ctx.Interaction.DeferAsync(true);
 
-            var DBUtil_Profile = new DBUtil_Profile();
-
             var hasRole = ctx.Member.Roles.Any(x => x.Name == "Hokage" || x.Name == "Council");
 
             if (hasRole)
             {
+                var DBUtil_Profile = new DBUtil_Profile();
                 var interactivity = ctx.Client.GetInteractivity();
 
-                var embedMessage = new DiscordEmbedBuilder()
-                {
-                    Color = DiscordColor.SpringGreen,
-                    Title = "Enter the MemberID of the application you wish to delete as the next message in this channel."
-                };
-                var followupMessage = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMessage));
+                var isRetrievedResponse = await ResponseMemberID(ctx, interactivity);
 
-                var nextMessage = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
-                var memberID = ulong.Parse(nextMessage.Result.Content);
-                DiscordMember member = null;
+                DiscordMember member;
+                ulong memberID;
 
-                try
+                if(isRetrievedResponse.Item1)
                 {
-                     member = await ctx.Guild.GetMemberAsync(memberID);
-                } catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
+                    memberID = isRetrievedResponse.Item2;
 
-                    var invalidUser = new DiscordEmbedBuilder()
+                    try
                     {
-                        Color = DiscordColor.Red,
-                        Title = $"MemberID does not match any existing villager application, please double check the MemberID!"
-                    };
-                    await ctx.Channel.DeleteMessageAsync(nextMessage.Result);
-                    await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder().AddEmbed(invalidUser));
+                        member = await ctx.Guild.GetMemberAsync(memberID);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+
+                        await ctx.Interaction.EditFollowupMessageAsync(isRetrievedResponse.Item3.Id, new DiscordWebhookBuilder()
+                            .WithContent("MemberID does not match any existing villager application, please check your response!"));
+                        return;
+                    }
+                } else
+                {
+                    await ctx.Interaction.EditFollowupMessageAsync(isRetrievedResponse.Item3.Id, new DiscordWebhookBuilder().WithContent("Unable to convert your response to a numerical value, please check your submission!"));
                     return;
                 }
-
+                
                 var isDeleted = await DBUtil_Profile.DeleteVillagerApplicationAsync(memberID);
-
-                await ctx.Channel.DeleteMessageAsync(nextMessage.Result);
 
                 if (isDeleted)
                 {
-                    var success = new DiscordEmbedBuilder()
-                    {
-                        Color = DiscordColor.SpringGreen,
-                        Title = $"Successfully deleted {member.Username}'s villager application!"
-                    };
-
-                    await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder().AddEmbed(success));
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Successfully deleted {member.Username}'s villager application!"));
                 } else
                 {
-                    var failed = new DiscordEmbedBuilder()
-                    {
-                        Color = DiscordColor.Red,
-                        Title = $"Failed to delete {member.Username}'s villager application!"
-                    };
-
-                    await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder().AddEmbed(failed));
+                    await ctx.Interaction.EditFollowupMessageAsync(isRetrievedResponse.Item3.Id, new DiscordWebhookBuilder().WithContent($"Failed to delete {member.Username}'s villager application!"));
                 }
             } else
             {
@@ -102,12 +87,18 @@ namespace Leaf_Village_Bot.Commands.Hokage
                 {
                     var embedFailed = new DiscordEmbedBuilder()
                     {
-                        Title = "Villager Raid Failed",
+                        Title = "Raid++ Failed",
                         Color = DiscordColor.Red,
                         Description = "Channel: Village Raid does not exist!"
                     };
 
                     await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
+                    return;
+                }
+
+                if(raidChannel.Users.Count() == 0)
+                {
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"There are no users in the Village Raid voice channel!"));
                     return;
                 }
 
@@ -119,10 +110,9 @@ namespace Leaf_Village_Bot.Commands.Hokage
 
                     if (!isUpdated)
                     {
-                        await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"{member.Nickname} raid stat was not updated!"));
+                        await ctx.Channel.SendMessageAsync(new DiscordMessageBuilder().WithContent($"{member.Nickname} raid stat was not updated!"));
                     }
                 }
-
                 await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Successfully increased all Member's Raids stat!"));
 
             } else
@@ -143,52 +133,74 @@ namespace Leaf_Village_Bot.Commands.Hokage
                 var DBUtil_Profile = new DBUtil_Profile();
                 var interactivity = ctx.Client.GetInteractivity();
 
-                var embedMessage = new DiscordEmbedBuilder()
+                var isRetrievedResponse = await ResponseMemberID(ctx, interactivity);
+
+                DiscordMember member;
+                ulong memberID;
+
+                if (isRetrievedResponse.Item1)
                 {
-                    Color = DiscordColor.SpringGreen,
-                    Title = "Enter the MemberID of the user you wish to retrieve alt(s) from as the next message in this channel."
-                };
-                var followupMessage = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMessage));
+                    memberID = isRetrievedResponse.Item2;
 
-                var nextMessage = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
-                
-                var memberID = ulong.Parse(nextMessage.Result.Content);
-
-                var isRetrieved = await DBUtil_Profile.GetAltsListAsync(memberID);
-                DiscordMember member = null;
-
-                try
-                {
-                    member = await ctx.Guild.GetMemberAsync(memberID);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-
-                    var invalidUser = new DiscordEmbedBuilder()
+                    try
                     {
-                        Color = DiscordColor.Red,
-                        Title = $"MemberID does not match any existing villager application, please double check the MemberID!"
-                    };
-                    await ctx.Channel.DeleteMessageAsync(nextMessage.Result);
-                    await ctx.Interaction.EditFollowupMessageAsync(followupMessage.Id, new DiscordWebhookBuilder().AddEmbed(invalidUser));
+                        member = await ctx.Guild.GetMemberAsync(memberID);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+
+                        await ctx.Interaction.EditFollowupMessageAsync(isRetrievedResponse.Item3.Id, new DiscordWebhookBuilder()
+                            .WithContent("MemberID does not match any existing villager application, please check your response!"));
+                        return;
+                    }
+                }
+                else
+                {
+                    await ctx.Interaction.EditFollowupMessageAsync(isRetrievedResponse.Item3.Id, new DiscordWebhookBuilder().WithContent("Unable to convert your response to a numerical value, please check your submission!"));
                     return;
                 }
-                await ctx.Channel.DeleteMessageAsync(nextMessage.Result);
+
+                var isRetrievedAlts = await DBUtil_Profile.GetAltsListAsync(memberID);
+                
                 var embedAlts = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithColor(DiscordColor.Red)
                     .WithTitle($"{member.Username} Alt(s) List:")
-                    .WithDescription(isRetrieved.Item2)
+                    .WithDescription(isRetrievedAlts.Item2)
                     .WithThumbnail(Global.LeafSymbol_URL)
                     .WithImageUrl(member.AvatarUrl)
                 );
 
-                await ctx.Channel.SendMessageAsync(embedAlts);
+                await ctx.Interaction.EditFollowupMessageAsync(isRetrievedResponse.Item3.Id, new DiscordWebhookBuilder(embedAlts));
             }
         }
 
+        public async Task<(bool, ulong, DiscordMessage)> ResponseMemberID(ButtonContext ctx, InteractivityExtension interactivity)
+        {
+            var embedMessage = new DiscordEmbedBuilder()
+            {
+                Color = DiscordColor.SpringGreen,
+                Title = "Enter the MemberID of the applicant as the next message in this channel."
+            };
 
+            var followupMessage = await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMessage));
+
+            var nextMessage = await interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.Interaction.User.Id, TimeSpan.FromMinutes(5));
+
+            ulong memberID;
+
+            if (ulong.TryParse(nextMessage.Result.Content, out memberID))
+            {
+                await ctx.Channel.DeleteMessageAsync(nextMessage.Result);
+                return (true, memberID, followupMessage);
+            }
+            else
+            {
+                await ctx.Channel.DeleteMessageAsync(nextMessage.Result);
+                return (false, 0, followupMessage);
+            }
+        }
     }
 }
 

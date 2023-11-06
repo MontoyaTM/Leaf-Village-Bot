@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Reflection.Emit;
 
 namespace Leaf_Village_Bot.Commands.Profile
 {
@@ -26,22 +28,29 @@ namespace Leaf_Village_Bot.Commands.Profile
 
             ButtonCommandsExtension buttonCommand = ctx.Client.GetButtonCommands();
 
-            try
+            var isLevel = await LevelCheck(ctx, modalValues);
+            
+            if(!isLevel)
             {
-                var level = int.Parse(modalValues.ElementAt(1));
-
-                if(level <= 0 || level > 60)
-                {
-                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Level field must within 1-60!"));
-                    return;
-                }
-
-            } catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Level field must within 1-60!"));
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                    .WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Level field must within 1-60!"));
                 return;
+            }
 
+            var isMasteries = await MasteriesCheck(ctx, modalValues);
+            if(!isMasteries)
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                    .WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Masteries do not match the ones listed below!"));
+                return;
+            }
+
+            var isClan = await ClanCheck(ctx, modalValues);
+            if(!isClan)
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                    .WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Clan does not match the ones listed below!"));
+                return;
             }
 
             var userInfo = new DBProfile
@@ -111,5 +120,86 @@ namespace Leaf_Village_Bot.Commands.Profile
                 await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to created application for {ctx.Interaction.User.Username}."));
             }
         }
+
+        public async Task<bool> MasteriesCheck(ModalContext ctx, string[] modalValues)
+        {
+            var masteries = modalValues.ElementAt(2).Split(",").Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+
+            var masteriesCount = masteries.Count();
+            if(masteriesCount <= 0 || masteriesCount > 2) 
+            {
+                return false;
+
+            }
+
+            string[] masteryArray = new string[]
+            {
+                "Fire",
+                "Earth",
+                "Water",
+                "Wind",
+                "Light",
+                "Weapon Master",
+                "Taijutsu",
+                "Medical",
+                "Gentle Fist"
+            };
+
+
+            foreach( string mastery in masteries )
+            {
+                if (!masteryArray.Contains(mastery))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public async Task<bool> ClanCheck(ModalContext ctx, string[] modalValues)
+        {
+            var clan = modalValues.ElementAt(3).Trim();
+
+            string[] clanArray = new string[]
+            {
+                "Sasayaki",
+                "Muteki",
+                "Suwa",
+                "Ukiyo",
+                "Hayashi",
+                "Clanless"
+            };
+
+            if(!clanArray.Contains(clan))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public async Task<bool> LevelCheck(ModalContext ctx, string[] modalValues)
+        {
+            int level;
+            try
+            {
+                level = int.Parse(modalValues.ElementAt(1));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+
+
+            if (level <= 0 || level > 60)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
     }
 }
