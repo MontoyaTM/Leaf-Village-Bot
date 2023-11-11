@@ -32,8 +32,8 @@ namespace Leaf_Village_Bot.Commands.Profile
                     .AddField("Level:", "The level (1-60) of your character.")
                     .AddField("Masteries:", "The masteries of your character. Make sure to separate your masteries with a comma! \n**Mastery 1, Mastery 2**")
                     .AddField("Fire, Earth, Wind, Water, Light, Medical, Weapon Master, Taijutsu, Gentle Fist", "*Make sure these match with your response!*")
-                    .AddField("Clan:", "The clan of your charcater or Clanless for those who did not join a village clan.")
-                    .AddField("Sasayaki, Muteki, Suwa, Ukiyo, Hayashi", "*Make sure these match with your response!*")
+                    .AddField("Clan:", "The clan of your character or Clanless for those who did not join a village clan.")
+                    .AddField("Sasayaki, Muteki, Suwa, Ukiyo, Hayashi or Clanless", "*Make sure these match with your response!*")
                     .AddField("Alt(s):", "An entire list of characters that you play on or have access to. Please include the IGN of the character for this application. " +
                                          "\n\nIf you are caught lying, an immediate punishment will follow which may include exile. Make sure to separate your alt(s) with a comma!" +
                                          "\n\n Ex: IGN, Alt1, Alt2, ...")
