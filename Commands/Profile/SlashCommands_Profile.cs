@@ -45,7 +45,7 @@ namespace Leaf_Village_Bot.Commands.Profile
                             .AddField("Organization Rank:", profile.OrgRank, true)
                             .AddField("Level:", profile.Level.ToString(), true)
                             .AddField("Masteries:", profile.Masteries, true)
-                            .AddField("Clan:", profile.Clan)
+                            .AddField("Clan:", profile.Clan, true)
                             .AddField("Proctored Missions:", profile.ProctoredMissions.ToString(), true)
                             .AddField("Raids:", profile.Raids.ToString(), true)
                             .AddField("Fame:", profile.Fame.ToString(), true)
