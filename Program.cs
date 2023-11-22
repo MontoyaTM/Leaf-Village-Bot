@@ -20,6 +20,7 @@ using Leaf_Village_Bot.Commands.Hokage;
 using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.SlashCommands.Attributes;
+using Leaf_Village_Bot.DBUtil.Profile;
 
 namespace Leaf_Village_Bot
 {
@@ -190,6 +191,7 @@ namespace Leaf_Village_Bot
         {
             var DBUtil_ReportTicket = new DBUtil_ReportTicket();
             var DBUtil_RPRequest = new DBUtil_RPRequest();
+            var DBUtil_Profile = new DBUtil_Profile();
 
             if (e.Interaction.Data.ComponentType == ComponentType.StringSelect)
             {
@@ -307,6 +309,42 @@ namespace Leaf_Village_Bot
                             };
                             await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(failed));
                         }
+
+                        break;
+
+                    case "dpdwn_ClanEmoji":
+                        await e.Interaction.DeferAsync(true);
+                        string clanSelected = e.Interaction.Data.Values[0];
+                        var isClanUpdated = await DBUtil_Profile.UpdateClanAsync(e.User.Id, clanSelected);
+
+                        if(isClanUpdated)
+                        {   
+                            await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Successfully updated your clan!"));
+                        } else
+                        {
+                            await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to update your clan!"));
+                        }
+
+                        break;
+
+                    case "dpdwn_MasteryEmoji":
+                        await e.Interaction.DeferAsync(true);
+
+                        var masterySelected = e.Interaction.Data.Values.ToArray();
+
+                        var masteries = string.Join(",", masterySelected);
+                        var queryMasteries = String.Join(",", masteries.Split(",").Select(x => string.Format("'{0}'", x)));
+
+                        var isMasteryUpdated = await DBUtil_Profile.UpdateMasteriesAsync(e.User.Id, queryMasteries);
+
+                        if(isMasteryUpdated)
+                        {
+                            await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Successfully updated your masteries!"));
+                        } else
+                        {
+                            await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to update your masteries!"));
+                        }
+
 
                         break;
                 }

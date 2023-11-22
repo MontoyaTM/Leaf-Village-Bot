@@ -28,31 +28,6 @@ namespace Leaf_Village_Bot.Commands.Profile
 
             ButtonCommandsExtension buttonCommand = ctx.Client.GetButtonCommands();
 
-            var isLevel = await LevelCheck(ctx, modalValues);
-            
-            if(!isLevel)
-            {
-                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
-                    .WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Level field must within 1-60!"));
-                return;
-            }
-
-            var isMasteries = await MasteriesCheck(ctx, modalValues);
-            if(!isMasteries)
-            {
-                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
-                    .WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Masteries do not match the ones listed below!"));
-                return;
-            }
-
-            var isClan = await ClanCheck(ctx, modalValues);
-            if(!isClan)
-            {
-                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
-                    .WithContent($"Failed to created application for {ctx.Interaction.User.Username}. Clan does not match the ones listed below!"));
-                return;
-            }
-
             var userInfo = new DBProfile
             {
                 UserName =  ctx.Interaction.User.Username,
@@ -61,10 +36,7 @@ namespace Leaf_Village_Bot.Commands.Profile
                 AvatarURL = ctx.Interaction.User.AvatarUrl,
                 ProfileImage = ctx.Interaction.User.AvatarUrl,
                 InGameName = modalValues.ElementAt(0),
-                Level = int.Parse(modalValues.ElementAt(1)),
-                Masteries = modalValues.ElementAt(2),
-                Clan = modalValues.ElementAt(3),
-                Alts = modalValues.ElementAt(4),
+                Alts = modalValues.ElementAt(2)
             };
 
             var applicationExists = await DBUtil_Profile.UserExistsAsync(userInfo.MemberID);
@@ -104,10 +76,8 @@ namespace Leaf_Village_Bot.Commands.Profile
                         .WithImageUrl(ctx.Interaction.User.AvatarUrl)
                         .WithThumbnail(Global.LeafSymbol_URL)
                         .WithFooter(ctx.Interaction.User.Id.ToString())
-                        .AddField("IGN:", userInfo.InGameName, true)
-                        .AddField("Level:", userInfo.Level.ToString(), true)
-                        .AddField("Masteries:", userInfo.Masteries, true)
-                        .AddField("Clan:", userInfo.Clan)
+                        .AddField("IGN:", userInfo.InGameName)
+                        .AddField("Introduction:", modalValues.ElementAt(1))
                         .AddField("Alt(s):", userInfo.Alts))
                     .AddComponents(
                     new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_AcceptApplicant"), "Accept Applicant"),
@@ -121,84 +91,75 @@ namespace Leaf_Village_Bot.Commands.Profile
             }
         }
 
-        public async Task<bool> MasteriesCheck(ModalContext ctx, string[] modalValues)
+        [ModalCommand("ProfileLevel")]
+        public async Task UpdateProfileLevel(ModalContext ctx)
         {
-            var masteries = modalValues.ElementAt(2).Split(",").Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+            await ctx.Interaction.DeferAsync(true);
 
-            var masteriesCount = masteries.Count();
-            if(masteriesCount <= 0 || masteriesCount > 2) 
+            var modalValues = ctx.Values;
+            var DBUtil_Profile = new DBUtil_Profile();
+
+            var isLevel = await LevelCheck(ctx, modalValues);
+            if (!isLevel.Item1)
             {
-                return false;
-
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                    .WithContent($"Failed to update level for {ctx.Interaction.User.Username} as level field must within 1-60!"));
+                return;
             }
 
-            string[] masteryArray = new string[]
+            var isUpdated = await DBUtil_Profile.UpdateLevelAsync(ctx.Interaction.User.Id, isLevel.Item2);
+            
+            if (isUpdated)
             {
-                "Fire",
-                "Earth",
-                "Water",
-                "Wind",
-                "Light",
-                "Weapon Master",
-                "Taijutsu",
-                "Medical",
-                "Gentle Fist"
-            };
-
-
-            foreach( string mastery in masteries )
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Successful updated your level!."));
+            } else
             {
-                if (!masteryArray.Contains(mastery))
-                {
-                    return false;
-                }
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to update your level!."));
             }
 
-            return true;
         }
 
-        public async Task<bool> ClanCheck(ModalContext ctx, string[] modalValues)
+        [ModalCommand("ProfileIGN")]
+        public async Task UpdateProfileIGN(ModalContext ctx)
         {
-            var clan = modalValues.ElementAt(3).Trim();
+            await ctx.Interaction.DeferAsync(true);
 
-            string[] clanArray = new string[]
-            {
-                "Sasayaki",
-                "Muteki",
-                "Suwa",
-                "Ukiyo",
-                "Hayashi",
-                "Clanless"
-            };
+            var modalValues = ctx.Values;
+            var DBUtil_Profile = new DBUtil_Profile();
 
-            if(!clanArray.Contains(clan))
+            var isUpdated = await DBUtil_Profile.UpdateIGNAsync(ctx.Interaction.User.Id, modalValues[0]);
+
+            if (isUpdated)
             {
-                return false;
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Successful updated your IGN!."));
+            }
+            else
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to update your IGN!."));
             }
 
-            return true;
         }
 
-        public async Task<bool> LevelCheck(ModalContext ctx, string[] modalValues)
+        public async Task<(bool, int)> LevelCheck(ModalContext ctx, string[] modalValues)
         {
             int level;
             try
             {
-                level = int.Parse(modalValues.ElementAt(1));
+                level = int.Parse(modalValues.ElementAt(0));
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return false;
+                return (false, -1);
             }
 
 
             if (level <= 0 || level > 60)
             {
-                return false;
+                return (false, -1);
             }
 
-            return true;
+            return (true, level);
         }
 
     }

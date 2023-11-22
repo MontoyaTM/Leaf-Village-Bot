@@ -101,17 +101,13 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                 {
                     await conn.OpenAsync();
 
-                    var masteryArray = profile.Masteries.Split(",").Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-                    var masteries = string.Join(",", masteryArray);
-                    var queryMasteries = String.Join(",", masteries.Split(",").Select(x => string.Format("'{0}'", x)));
-
                     var altsArray = profile.Alts.Split(",").Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
                     var alts = string.Join(",", altsArray);
-                    var queryAlts = String.Join(",", alts.Split(',').Select(x => string.Format("'{0}'", x)));
+                    var queryAlts = String.Join(",", alts.Split(",").Select(x => string.Format("'{0}'", x)));
 
                     string query = "INSERT INTO data.profiledata (memberid, username, serverid, avatarurl, profileimage, ingamename, level, clan, masteries , alts, fame, raids, organization, orgrank, proctoredmissions) " +
                                   $"VALUES ('{profile.MemberID}', '{profile.UserName}', '{profile.ServerID}', '{profile.AvatarURL}', '{profile.ProfileImage}', '{profile.InGameName}', " +
-                                  $"'{profile.Level}', '{profile.Clan}', ARRAY[{queryMasteries}], ARRAY[{queryAlts}], '{profile.Fame}', '{profile.Raids}', '{profile.Organization}', '{profile.OrgRank}', '{profile.ProctoredMissions}');";
+                                  $"'{profile.Level}', '{profile.Clan}', ARRAY['{profile.Masteries}'], ARRAY[{queryAlts}], '{profile.Fame}', '{profile.Raids}', '{profile.Organization}', '{profile.OrgRank}', '{profile.ProctoredMissions}');";
 
                     using (var cmd = new NpgsqlCommand(query, conn))
                     {
@@ -338,6 +334,36 @@ namespace Leaf_Village_Bot.DBUtil.Profile
             }
         }
 
+        public async Task<bool> UpdateIGNAsync(ulong MemberID, string IGN)
+        {
+            try
+            {
+                string connectionString = await ConnectionStringAsync();
+
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+
+                    string query = "UPDATE data.profiledata " +
+                                  $"SET ingamename = '{IGN}' " +
+                                  $"WHERE memberid = {MemberID};";
+
+                    using (var cmd = new NpgsqlCommand(query, conn))
+                    {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                return true;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
         public async Task<bool> UpdateLevelAsync(ulong MemberID, int Level)
         {
             try
@@ -406,12 +432,8 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                 {
                     await conn.OpenAsync();
 
-                    var masteryArray = Masteries.Split(",").Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-                    var masteries = string.Join(",", masteryArray);
-                    var queryMasteries = String.Join(",", masteries.Split(",").Select(x => string.Format("'{0}'", x)));
-
                     string query = "UPDATE data.profiledata " +
-                    $"SET  masteries = ARRAY[{queryMasteries}] " +
+                    $"SET  masteries = ARRAY[{Masteries}] " +
                     $"WHERE memberid = {MemberID};";
 
                     using ( var cmd = new NpgsqlCommand(query,conn))
