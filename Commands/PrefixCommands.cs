@@ -94,7 +94,7 @@ namespace Leaf_Village_Bot.Commands
         {
             var embed1 = new DiscordEmbedBuilder()
                 .WithUrl("https://www.ninonline.com/forum/")
-                .WithImageUrl(Global.Villager_URL);
+                .WithImageUrl(Global.VillagerApplication_URL);
 
             var embed2 = new DiscordEmbedBuilder()
                 .WithUrl("https://www.ninonline.com/forum/")

@@ -21,6 +21,7 @@ using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.SlashCommands.Attributes;
 using Leaf_Village_Bot.DBUtil.Profile;
+using Leaf_Village_Bot.Commands.Raid;
 
 namespace Leaf_Village_Bot
 {
@@ -93,6 +94,7 @@ namespace Leaf_Village_Bot
             Commands.RegisterCommands<PrefixCommands_LMPF>();
             Commands.RegisterCommands<PrefixCommands_Profile>();
             Commands.RegisterCommands<PrefixCommands_Ranked>();
+            Commands.RegisterCommands<Prefix_Commands_Raid>();
 
 
             slashCommands.RegisterCommands<SlashCommands_Profile>();
