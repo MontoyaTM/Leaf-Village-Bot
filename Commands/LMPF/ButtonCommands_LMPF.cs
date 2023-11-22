@@ -290,6 +290,7 @@ namespace Leaf_Village_Bot.Commands.LMPF
         public async Task<(bool, List<DiscordSelectComponentOption>)> GetSelectComponentOptions(ulong serverid)
         {
             var dropdownOptions = new List<DiscordSelectComponentOption>();
+
             var DBUtil_ReportTicket = new DBUtil_ReportTicket();
             var retrieveTickets = await DBUtil_ReportTicket.GetAllReportTicketsAsync(serverid);
 

@@ -17,13 +17,32 @@ namespace Leaf_Village_Bot.Commands.Profile
             var modalVillagerApplication = ModalBuilder.Create("ProfileVillagerApplication")
                 .WithTitle("Leaf Village Villager Application")
                 .AddComponents(new TextInputComponent("IGN:", "ingamenameTextBox", "Name of Character", null, true, TextInputStyle.Short))
-                .AddComponents(new TextInputComponent("Level:", "levelTextBox", "Level (1-60)", null, true, TextInputStyle.Short))
-                .AddComponents(new TextInputComponent("Masteries:", "masteriesTextBox", "Mastery1, Mastery2", null, true, TextInputStyle.Short))
-                .AddComponents(new TextInputComponent("Clan:", "clanTextBox", "Clan Name or Clanless", null, true, TextInputStyle.Short))
+                .AddComponents(new TextInputComponent("Introduction:", "introductionTextBox", "Introduce youself & reason for joining", null, true, TextInputStyle.Paragraph))
                 .AddComponents(new TextInputComponent("Alt(s):", "altsTextBox", "IGN, Alt1, Alt2, ... \nPlease be sure to separate your alt(s) with a comma!", null, true, TextInputStyle.Paragraph));
 
             await ctx.Interaction.CreateResponseAsync(InteractionResponseType.Modal, modalVillagerApplication);
         }
+
+        [ButtonCommand("btn_UpdateLevel")]
+        public async Task UpdateLevel(ButtonContext ctx)
+        {
+            var modalUpdateLevel = ModalBuilder.Create("ProfileLevel")
+                .WithTitle("Update Profile — Character Level")
+                .AddComponents(new TextInputComponent("Level:", "ProfileLevel", "Level (1-60)", null, true, TextInputStyle.Short));
+
+            await ctx.Interaction.CreateResponseAsync (InteractionResponseType.Modal, modalUpdateLevel);
+        }
+
+        [ButtonCommand("btn_UpdateIGN")]
+        public async Task UpdateIGN(ButtonContext ctx)
+        {
+            var modalUpdateLevel = ModalBuilder.Create("ProfileIGN")
+                .WithTitle("Update Profile — Character IGN")
+                .AddComponents(new TextInputComponent("IGN:", "ProfileIGN", "Ingame Name", null, true, TextInputStyle.Short));
+
+            await ctx.Interaction.CreateResponseAsync(InteractionResponseType.Modal, modalUpdateLevel);
+        }
+
 
         [ButtonCommand("btn_AcceptApplicant")]
         public async Task AcceptVillager(ButtonContext ctx)
@@ -137,11 +156,9 @@ namespace Leaf_Village_Bot.Commands.Profile
                     .WithTitle($"Leaf Village Application")
                     .WithImageUrl(member.AvatarUrl)
                     .WithThumbnail(Global.LeafSymbol_URL)
-                    .AddField("IGN:", embedFieldLists[0], true)
-                    .AddField("Level:", embedFieldLists[1], true)
-                    .AddField("Masteries:", embedFieldLists[2], true)
-                    .AddField("Clan:", embedFieldLists[3])
-                    .AddField("Alt(s):", embedFieldLists[4])
+                    .AddField("IGN:", embedFieldLists[0])
+                    .AddField("Introduction:", embedFieldLists[1])
+                    .AddField("Alt(s):", embedFieldLists[2])
                     .WithFooter($"{memberID}\nApplication Denied: \n{reason.Result.Content}\n")
                     );
 

@@ -40,15 +40,15 @@ namespace Leaf_Village_Bot.Commands.Profile
                             .WithTitle($"Leaf Village Application")
                             .WithImageUrl(profile.ProfileImage)
                             .WithThumbnail(Global.LeafSymbol_URL)
-                            .AddField("IGN:", profile.InGameName, true)
-                            .AddField("Organization:", profile.Organization, true)
-                            .AddField("Organization Rank:", profile.OrgRank, true)
-                            .AddField("Level:", profile.Level.ToString(), true)
-                            .AddField("Masteries:", profile.Masteries, true)
-                            .AddField("Clan:", profile.Clan, true)
-                            .AddField("Proctored Missions:", profile.ProctoredMissions.ToString(), true)
-                            .AddField("Raids:", profile.Raids.ToString(), true)
-                            .AddField("Fame:", profile.Fame.ToString(), true)
+                            .AddField("IGN:", $"```{profile.InGameName}```", true)
+                            .AddField("Organization:", $"```{profile.Organization}```", true)
+                            .AddField("Organization Rank:", $"```{profile.OrgRank}```", true)
+                            .AddField("Level:", $"```{profile.Level.ToString()}```", true)
+                            .AddField("Masteries:", $"```{profile.Masteries}```", true)
+                            .AddField("Clan:", $"```{profile.Clan}```", true)
+                            .AddField("Proctored Missions:", $"```{profile.ProctoredMissions.ToString()}```", true)
+                            .AddField("Raids:", $"```{profile.Raids.ToString()}```", true)
+                            .AddField("Fame:", $"```{profile.Fame.ToString()}```", true)
                             );
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(embedApplication));
@@ -57,124 +57,6 @@ namespace Leaf_Village_Bot.Commands.Profile
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Failed to retrieved profile!"));
             }
         }
-
-        [SlashCommand("update_profile", "Updates all fields of the user's profile.")]
-        [SlashCooldown(2, 30, SlashCooldownBucketType.User)]
-        public async Task UpdateProfile(InteractionContext ctx, [Option("IGN", "Character's in game name.")] string IGN,
-                                                                [Option("Level", "Character's current level.")] long Level,
-                                                                [Option("Masteries", "Character's masteries.")] string Masteries,
-                                                                [Option("Clan", "Character's clan.")] string Clan)
-        {
-            await ctx.DeferAsync(true);
-            
-            DBUtil_Profile dBUtil_Profile = new DBUtil_Profile();
-
-            var MemberID = ctx.Interaction.User.Id;
-            var Profile = new DBProfile()
-            {
-                InGameName = IGN,
-                Level = (int)Level,
-                Masteries = Masteries,
-                Clan = Clan
-            };
-
-            var isUpdated = await dBUtil_Profile.UpdateProfileAsync(MemberID, Profile);
-
-            if (isUpdated)
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Successfully updated profile information!"));
-            }
-            else
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Failed to updated profile information!"));
-            }
-        }
-
-
-
-
-        [SlashCommand("update_level", "Updates the user's profile level.")]
-        [SlashCooldown(2, 30, SlashCooldownBucketType.User)]
-        public async Task UpdateProfileLevel(InteractionContext ctx, [Option("Level", "Level(1-60)")] long Level)
-        {
-            await ctx.DeferAsync(true);
-
-            DBUtil_Profile DBUtil_Profile = new DBUtil_Profile();
-
-            var MemberID = ctx.Interaction.User.Id;
-
-            try
-            {
-                if (Level <= 0 || Level > 60)
-                {
-                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Failed to update level for {ctx.Interaction.User.Username}. Level field must within 1-60!"));
-                    return;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return;
-            }
-
-            var isUpdated = await DBUtil_Profile.UpdateLevelAsync(MemberID, (int)Level);
-
-            if (isUpdated)
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Successfully updated profile level!"));
-            }
-            else
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Failed to updated profile level!"));
-            }
-        }
-
-        [SlashCommand("update_masteries", "Updates the user's profile masteries.")]
-        [SlashCooldown(2, 30, SlashCooldownBucketType.User)]
-        public async Task UpdateMasteries(InteractionContext ctx, [Option("Masteries", "The masteries you want to update.")] string Masteries)
-        {
-            await ctx.DeferAsync(true);
-
-            DBUtil_Profile DBUtil_Profile = new DBUtil_Profile();
-
-            var MemberID = ctx.Interaction.User.Id;
-
-            var isUpdated = await DBUtil_Profile.UpdateMasteriesAsync(MemberID, Masteries);
-
-            if (isUpdated)
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Successfully updated profile masteries!"));
-            }
-            else
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Failed to updated profile masteries!"));
-            }
-        }
-
-        [SlashCommand("update_clan", "Updates the user's profile clan.")]
-        [SlashCooldown(2, 30, SlashCooldownBucketType.User)]
-        public async Task UpdateClan(InteractionContext ctx, [Option("Clan", "The clan you want to update.")] string Clan)
-        {
-            await ctx.DeferAsync(true);
-
-            DBUtil_Profile DBUtil_Profile = new DBUtil_Profile();
-
-            var MemberID = ctx.Interaction.User.Id;
-
-            var isUpdated = await DBUtil_Profile.UpdateClanAsync(MemberID, Clan);
-
-            if (isUpdated)
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Successfully updated profile masteries!"));
-            }
-            else
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Failed to updated profile masteries!"));
-            }
-        }
-
-
 
         [SlashCommand("update_profileimage", "Updates the user's profile image.")]
         [SlashCooldown(2, 30, SlashCooldownBucketType.User)]
