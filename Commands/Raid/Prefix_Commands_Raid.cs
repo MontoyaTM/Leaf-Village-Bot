@@ -26,8 +26,9 @@ namespace Leaf_Village_Bot.Commands.Raid
                     .WithColor(DiscordColor.SpringGreen)
                     .WithTitle("Leaf Village Raid Dashboard")
                     .WithThumbnail(Global.LeafSymbol_URL)
-                    .WithImageUrl(Global.HokageNPC_URL)
+                    .WithImageUrl(Global.MontoyaTM_URL)
                     .AddField("Raid++", "Raid++ increments the Raid stat for each user in the Village Raid voice channel.")
+                    .AddField("Retrieve Masteries:", "Return a list of masteries of each user within the Village Raid voice channel to see composition.")
                 )
                 .AddComponents(new DiscordComponent[]
                 {

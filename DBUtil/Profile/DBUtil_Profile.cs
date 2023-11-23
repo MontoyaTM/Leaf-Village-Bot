@@ -212,7 +212,7 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     await conn.OpenAsync();
-                    
+
                     string query = "SELECT p.profileimage " +
                                    "FROM data.profiledata p " +
                                   $"WHERE memberid = {MemberID};";
@@ -236,7 +236,7 @@ namespace Leaf_Village_Bot.DBUtil.Profile
             }
         }
 
-        public async Task<(bool, string)> GetAltsListAsync(ulong MemberID) 
+        public async Task<(bool, string)> GetAltsListAsync(ulong MemberID)
         {
             try
             {
@@ -266,6 +266,48 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                 return (false, String.Empty);
             }
         }
+
+        public async Task<(bool, string[])> GetRaidMasteries(List<ulong> MemberIDs)
+        {
+
+            try
+            {
+                string[] masteries = new String[MemberIDs.Count];
+
+                string connectionString = await ConnectionStringAsync();
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    await conn.OpenAsync();
+                    var count = 0; 
+                    foreach (var id in MemberIDs)
+                    {
+                        string query = "SELECT p.ingamename, ARRAY_TO_STRING(p.masteries, '/') " +
+                                   "FROM data.profiledata p " +
+                                  $"WHERE p.memberid = {MemberIDs[count]};";
+
+                        using (var cmd = new NpgsqlCommand(query, conn))
+                        {
+                            var reader = await cmd.ExecuteReaderAsync();
+                            await reader.ReadAsync();
+
+                            masteries[count] = $"{reader.GetString(0)} — **{reader.GetString(1)}**";
+
+                            reader.Close();
+                        }
+
+                        count++;
+                    }
+                }
+
+                return (true, masteries);
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return (false, null);
+            }
+            
+        } 
+
 
         #endregion
 

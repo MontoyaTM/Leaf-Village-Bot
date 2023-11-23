@@ -104,6 +104,7 @@ namespace Leaf_Village_Bot
             ButtonCommands.RegisterButtons<ButtonCommands_LMPF>();
             ButtonCommands.RegisterButtons<ButtonCommands_Ranked>();
             ButtonCommands.RegisterButtons<ButtonCommands_Hokage>();
+            ButtonCommands.RegisterButtons<ButtonCommands_Raid>();
 
             ModalCommands.RegisterModals<ModalCommands_Profile>();
             ModalCommands.RegisterModals<ModalCommands_Ranked>();
