@@ -210,6 +210,13 @@ namespace Leaf_Village_Bot.Commands.Raid
 
                 var Members = raidLobby.Users.ToList();
 
+                if(Members.Count == 0)
+                {
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                        .WithContent($"There are no users in the Village Lobby voice channel!"));
+                    return;
+                }
+
                 foreach (var member in Members)
                 {
                     if (member.VoiceState != null)
