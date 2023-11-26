@@ -164,7 +164,7 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                 {
                     await conn.OpenAsync();
 
-                    string query = "SELECT p.ingamename, p.level, ARRAY_TO_STRING(p.masteries, ','), p.clan, p.organization, p.orgrank, p.raids, p.fame, p.avatarurl, p.profileimage, p.proctoredmissions " +
+                    string query = "SELECT p.ingamename, p.level, ARRAY_TO_STRING(p.masteries, '/'), p.clan, p.organization, p.orgrank, p.raids, p.fame, p.avatarurl, p.profileimage, p.proctoredmissions " +
                                    "FROM data.profiledata p " +
                                   $"WHERE memberid = ' {MemberID}'";
 
@@ -288,11 +288,19 @@ namespace Leaf_Village_Bot.DBUtil.Profile
                         using (var cmd = new NpgsqlCommand(query, conn))
                         {
                             var reader = await cmd.ExecuteReaderAsync();
+
                             await reader.ReadAsync();
 
-                            masteries[count] = $"{reader.GetString(0)} — **{reader.GetString(1)}**";
+                            if (reader.HasRows)
+                            {
+                                masteries[count] = $"{reader.GetString(0)} — **{reader.GetString(1)}**";
 
-                            reader.Close();
+                                reader.Close();
+                            } else
+                            {
+                                reader.Close();
+                            }
+
                         }
 
                         count++;
@@ -312,39 +320,6 @@ namespace Leaf_Village_Bot.DBUtil.Profile
         #endregion
 
         #region Update Profile
-        public async Task<bool> UpdateProfileAsync(ulong MemberID, DBProfile profile)
-        {
-            try
-            {
-                string connectionString = await ConnectionStringAsync();
-
-                using (var conn = new NpgsqlConnection(connectionString))
-                {
-                    await conn.OpenAsync();
-
-                    var masteryArray = profile.Masteries.Split(",").Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-                    var masteries = string.Join(",", masteryArray);
-                    var queryMasteries = String.Join(",", masteries.Split(",").Select(x => string.Format("'{0}'", x)));
-
-                    string query = "UPDATE data.profiledata " +
-                                  $"SET  ingamename = '{profile.InGameName}', level = {profile.Level}, masteries = ARRAY[{queryMasteries}], clan = '{profile.Clan}' " +
-                                  $"WHERE memberid = {MemberID};";
-
-                    using (var cmd = new NpgsqlCommand(query, conn))
-                    {
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                }
-
-                return true;
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return false;
-            }
-        }
 
         public async Task<bool> UpdateProfileImageAsync(ulong MemberID, string ImageURL)
         {
@@ -392,7 +367,7 @@ namespace Leaf_Village_Bot.DBUtil.Profile
 
                     using (var cmd = new NpgsqlCommand(query, conn))
                     {
-                        await cmd.ExecuteNonQueryAsync();
+                        var reader = await cmd.ExecuteNonQueryAsync();
                     }
                 }
 

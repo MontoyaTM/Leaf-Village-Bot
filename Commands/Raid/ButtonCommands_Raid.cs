@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.ButtonCommands;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.Net.Models;
 using Leaf_Village_Bot.DBUtil.Profile;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace Leaf_Village_Bot.Commands.Raid
     public class ButtonCommands_Raid : ButtonCommandModule
     {
         [ButtonCommand("btn_VillageRaid")]
-        public async Task VillageRaid(ButtonContext ctx)
+        public async Task RaidCounter(ButtonContext ctx)
         {
             await ctx.Interaction.DeferAsync(true);
 
@@ -53,7 +54,6 @@ namespace Leaf_Village_Bot.Commands.Raid
                     return;
                 }
 
-
                 if (raidChannel.Users.Count() == 0)
                 {
                     await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"There are no users in the Village Raid voice channel!"));
@@ -61,12 +61,22 @@ namespace Leaf_Village_Bot.Commands.Raid
                 }
 
                 var Members = raidChannel.Users.ToList();
+
                 string[] username = new string[Members.Count];
+
                 var i = 0;
-                foreach(var member in Members)
+
+                foreach (var member in Members)
                 {
-                    username[i]  = member.Username;
-                    i++;
+                    var userExists = await DBUtil_Profile.UserExistsAsync(member.Id);
+
+                    if(userExists)
+                    {
+                        var isUpdated = await DBUtil_Profile.UpdateRaidAsync(member.Id);
+
+                        username[i] = member.Username;
+                        i++;
+                    }
                 }
 
                 var dateTime = DateTime.Now.ToString("MM/dd/yyyy hh:mm tt");
@@ -78,18 +88,8 @@ namespace Leaf_Village_Bot.Commands.Raid
                         .WithTitle("Leaf Village — Raid++")
                         .WithDescription(string.Join("\n", username))
                         .WithFooter("• " + dateTime + "     • Raid Leader: " + ctx.Interaction.User.Username)
-                        
                     );
 
-                foreach (var member in Members)
-                {
-                    var isUpdated = await DBUtil_Profile.UpdateRaidAsync(member.Id);
-
-                    if (!isUpdated)
-                    {
-                        await ctx.Channel.SendMessageAsync(new DiscordMessageBuilder().WithContent($"{member.Nickname} raid stat was not updated!"));
-                    }
-                }
                 await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Successfully increased all Member's Raids stat!"));
 
                 await ctx.Client.SendMessageAsync(await ctx.Client.GetChannelAsync(recordsChannel.Id), embedRaid);
@@ -97,7 +97,8 @@ namespace Leaf_Village_Bot.Commands.Raid
             }
             else
             {
-                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Unable to use button command Raid++ for {ctx.Interaction.User.Username}, please check required roles."));
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                    .WithContent($"Unable to use button command Raid++ for {ctx.Interaction.User.Username}, please check required roles."));
             }
         }
 
@@ -161,14 +162,71 @@ namespace Leaf_Village_Bot.Commands.Raid
                     await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
                         .WithContent($"Unable to retrieve masteries!"));
                 }
-
-
-
-
+            } else
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                    .WithContent($"Unable to use button command Retrieve Masteries for {ctx.Interaction.User.Username}, please check required roles."));
             }
+        }
 
+        [ButtonCommand("btn_VoiceChannel")]
+        public async Task RaidVoiceChannel(ButtonContext ctx)
+        {
+            await ctx.Interaction.DeferAsync(true);
 
+            var hasRole = ctx.Member.Roles.Any(x => x.Name == "Hokage" || x.Name == "Council" || x.Name == "Raid Leader");
 
+            if (hasRole)
+            {
+                var guildChannels = await ctx.Guild.GetChannelsAsync();
+                var raidLobby = guildChannels.FirstOrDefault(x => x.Name == "Raid Lobby");
+                var raidChannel = guildChannels.FirstOrDefault(x => x.Name == "Village Raid");
+
+                if (raidLobby == null)
+                {
+                    var embedFailed = new DiscordEmbedBuilder()
+                    {
+                        Title = "Village Raid Failed",
+                        Color = DiscordColor.Red,
+                        Description = "Channel: Raid Lobby does not exist!"
+                    };
+
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
+                    return;
+                }
+
+                if (raidChannel == null)
+                {
+                    var embedFailed = new DiscordEmbedBuilder()
+                    {
+                        Title = "Villager Raid Failed",
+                        Color = DiscordColor.Red,
+                        Description = "Channel: Village Raid does not exist!"
+                    };
+
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
+                    return;
+                }
+
+                var Members = raidLobby.Users.ToList();
+
+                foreach (var member in Members)
+                {
+                    if (member.VoiceState != null)
+                    {
+                        await member.ModifyAsync(delegate (MemberEditModel Edit)
+                        {
+                            Edit.VoiceChannel = raidChannel;
+                        });
+                    }
+                }
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent($"Successfully moved all users to the Village Raid!"));
+
+            } else
+            {
+                await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                    .WithContent($"Unable to use button command Voice Channel for {ctx.Interaction.User.Username}, please check required roles."));
+            }
         }
     }
 }

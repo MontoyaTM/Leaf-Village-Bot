@@ -318,6 +318,15 @@ namespace Leaf_Village_Bot
                     case "dpdwn_ClanEmoji":
                         await e.Interaction.DeferAsync(true);
                         string clanSelected = e.Interaction.Data.Values[0];
+
+                        var userExists_Clan = await DBUtil_Profile.UserExistsAsync(e.Interaction.User.Id);
+
+                        if(!userExists_Clan)
+                        {
+                            await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent("You do not have a profile in the database!"));
+                            break;
+                        }
+
                         var isClanUpdated = await DBUtil_Profile.UpdateClanAsync(e.User.Id, clanSelected);
 
                         if(isClanUpdated)
@@ -332,8 +341,15 @@ namespace Leaf_Village_Bot
 
                     case "dpdwn_MasteryEmoji":
                         await e.Interaction.DeferAsync(true);
-
                         var masterySelected = e.Interaction.Data.Values.ToArray();
+
+                        var userExists_Mastery = await DBUtil_Profile.UserExistsAsync(e.Interaction.User.Id);
+
+                        if (!userExists_Mastery)
+                        {
+                            await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent("You do not have a profile in the database!"));
+                            break;
+                        }
 
                         var masteries = string.Join(",", masterySelected);
                         var queryMasteries = String.Join(",", masteries.Split(",").Select(x => string.Format("'{0}'", x)));

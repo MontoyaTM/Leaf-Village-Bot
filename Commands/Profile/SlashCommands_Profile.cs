@@ -28,6 +28,14 @@ namespace Leaf_Village_Bot.Commands.Profile
 
             DBUtil_Profile DBUtil_Profile = new DBUtil_Profile();
 
+            var userExist = await DBUtil_Profile.UserExistsAsync(ctx.User.Id); 
+
+            if(userExist == false)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"{ctx.User.Username}'s profile does not exist!"));
+                return;
+            }
+
             var isRetieved = await DBUtil_Profile.GetProfileAsync(ctx.User.Id);
 
             if(isRetieved.Item1)

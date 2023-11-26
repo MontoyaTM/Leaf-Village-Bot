@@ -26,14 +26,16 @@ namespace Leaf_Village_Bot.Commands.Raid
                     .WithColor(DiscordColor.SpringGreen)
                     .WithTitle("Leaf Village Raid Dashboard")
                     .WithThumbnail(Global.LeafSymbol_URL)
-                    .WithImageUrl(Global.MontoyaTM_URL)
-                    .AddField("Raid++", "Raid++ increments the Raid stat for each user in the Village Raid voice channel.")
-                    .AddField("Retrieve Masteries:", "Return a list of masteries of each user within the Village Raid voice channel to see composition.")
+                    .WithImageUrl(Global.RaidDashboard_URL)
+                    .AddField("Raid++", "Increments the Raid stat for each user in the Village Raid voice channel.")
+                    .AddField("Raid Composition:", "Return a list of masteries for each user in the Village Raid voice channel.")
+                    .AddField("Voice Channel:", "Moves all users in the Raid Lobby voice channel to the Village Raid voice channel.")
                 )
                 .AddComponents(new DiscordComponent[]
                 {
                     new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_VillageRaid"), "Raid++"),
-                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_RetrieveMasteries"), "Retrieve Masteries")
+                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_RetrieveMasteries"), "Raid Composition"),
+                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_VoiceChannel"), "Voice Channel")
                 });
 
             await ctx.Message.DeleteAsync();
