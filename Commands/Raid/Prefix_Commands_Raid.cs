@@ -33,7 +33,7 @@ namespace Leaf_Village_Bot.Commands.Raid
                 )
                 .AddComponents(new DiscordComponent[]
                 {
-                    new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_VillageRaid"), "Raid++"),
+                    new DiscordButtonComponent(ButtonStyle.Success, buttonCommand.BuildButtonId("btn_VillageRaid"), "Raid++"),
                     new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_RetrieveMasteries"), "Raid Composition"),
                     new DiscordButtonComponent(ButtonStyle.Primary, buttonCommand.BuildButtonId("btn_VoiceChannel"), "Voice Channel")
                 });

@@ -98,7 +98,7 @@ namespace Leaf_Village_Bot.Commands
 
             var embed2 = new DiscordEmbedBuilder()
                 .WithUrl("https://www.ninonline.com/forum/")
-                .WithImageUrl(Global.LMPFNPC_URL);
+                .WithImageUrl(Global.LMPFDashboard_URL);
 
             var embed3 = new DiscordEmbedBuilder()
                 .WithUrl("https://www.ninonline.com/forum/")

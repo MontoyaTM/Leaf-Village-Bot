@@ -71,7 +71,9 @@ namespace Leaf_Village_Bot.Commands.Profile
                 new DiscordSelectComponentOption("Medical", "Medical", null, false, new DiscordComponentEmoji(1175079203163611156)),
                 new DiscordSelectComponentOption("Weapon Master", "Weapon Master", null, false, new DiscordComponentEmoji(1175079236416061462)),
                 new DiscordSelectComponentOption("Taijutsu", "Taijutsu", null, false, new DiscordComponentEmoji(1175079215016726538)),
-                new DiscordSelectComponentOption("Gentle Fist", "Gentle Fist", null, false, new DiscordComponentEmoji(1175083831062175836))
+                new DiscordSelectComponentOption("Gentle Fist", "Gentle Fist", null, false, new DiscordComponentEmoji(1180996595018387466)),
+                new DiscordSelectComponentOption("Fan", "Fan", null, false, new DiscordComponentEmoji(1180996613246812220)),
+                new DiscordSelectComponentOption("Bubble", "Bubble", null, false, new DiscordComponentEmoji(1180996625456447598))
             };
             var createMasteryDropdown = new DiscordSelectComponent("dpdwn_MasteryEmoji", "Update Mastery(s)", dropdownMasteryOptions, false, 1, 2);
 

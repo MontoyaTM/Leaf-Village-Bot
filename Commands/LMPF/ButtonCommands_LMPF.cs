@@ -92,13 +92,12 @@ namespace Leaf_Village_Bot.Commands.LMPF
                 {
                     embedFieldLists.Add(field.Value);
                 }
-                var isRetrieved = await DBUtil_Profile.GetProfileImageAsync(ctx.Interaction.User.Id);
-
+                
                 var embedReportRecord = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithColor(DiscordColor.SpringGreen)
                     .WithTitle($"Leaf Military Police Force Report")
-                    .WithImageUrl(isRetrieved.Item2)
+                    .WithImageUrl(ctx.User.AvatarUrl)
                     .WithThumbnail(Global.LeafSymbol_URL)
                     .AddField("Plantiff:", embedFieldLists[0], true)
                     .AddField("Defendant:", embedFieldLists[1], true)

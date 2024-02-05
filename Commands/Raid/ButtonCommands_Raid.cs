@@ -80,7 +80,6 @@ namespace Leaf_Village_Bot.Commands.Raid
                 }
 
                 var dateTime = DateTime.Now.ToString("MM/dd/yyyy hh:mm tt");
-                var profileImage = await DBUtil_Profile.GetProfileImageAsync(ctx.Interaction.User.Id);
 
                 var embedRaid = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
@@ -114,15 +113,28 @@ namespace Leaf_Village_Bot.Commands.Raid
                 var DBUtil_Profile = new DBUtil_Profile();
                 var guildChannels = await ctx.Guild.GetChannelsAsync();
                 var raidChannel = guildChannels.FirstOrDefault(x => x.Name == "Village Raid");
-                var warroomChannel = guildChannels.FirstOrDefault(x => x.Name == "war-room");
+                var recordsChannel = guildChannels.FirstOrDefault(x => x.Name == "war-room");
 
-                if (raidChannel == null || warroomChannel == null)
+                if (raidChannel == null)
                 {
                     var embedFailed = new DiscordEmbedBuilder()
                     {
-                        Title = "Raid++ Failed",
+                        Title = "Raid Composition Failed",
                         Color = DiscordColor.Red,
-                        Description = "Channel: Village Raid or War Room does not exist!"
+                        Description = "Channel: Village Raid voice channel does not exist!"
+                    };
+
+                    await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
+                    return;
+                }
+
+                if (recordsChannel == null)
+                {
+                    var embedFailed = new DiscordEmbedBuilder()
+                    {
+                        Title = "Raid Composition Failed",
+                        Color = DiscordColor.Red,
+                        Description = "Channel: war-room channel does not exist!"
                     };
 
                     await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedFailed));
@@ -147,13 +159,16 @@ namespace Leaf_Village_Bot.Commands.Raid
 
                 if(isRetrieved.Item1)
                 {
+                    var dateTime = DateTime.Now.ToString("MM/dd/yyyy hh:mm tt");
+
                     var embedMasteries = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder()
                             .WithColor(DiscordColor.SpringGreen)
                             .WithTitle("Leaf Village — Raid Composition")
                             .WithDescription(string.Join("\n", isRetrieved.Item2))
+                            .WithFooter("• " + dateTime + "     • Raid Leader: " + ctx.Interaction.User.Username)
                         );
-                    await ctx.Client.SendMessageAsync(warroomChannel, embedMasteries);
+                    await ctx.Client.SendMessageAsync(recordsChannel, embedMasteries);
                     await ctx.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
                         .WithContent($"Successfully retrieved masteries for those inside voice channel!"));
 
